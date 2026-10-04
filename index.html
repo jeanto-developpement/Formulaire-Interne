@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Formulaires · Flo-Fab</title>
+<meta name="theme-color" content="#0b3d6e">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style id="pageStyle"></style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#/" aria-label="Accueil des formulaires">
+      <img class="logo" src="logo.svg" alt="Flo-Fab">
+      <h1 id="pageTitle">Formulaires Flo-Fab<small id="pageSub">Service &amp; mise en marche</small></h1>
+    </a>
+    <div class="spacer"></div>
+    <span class="status" id="status" aria-live="polite"></span>
+    <div class="lang" role="group" aria-label="Langue / Language"><button type="button" data-lang="fr" aria-pressed="true">FR</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div>
+    <button class="btn ghost" id="themeBtn" type="button" aria-label="Changer le thème / Toggle theme">◐</button>
+  </div>
+</header>
+
+<main>
+  <section id="view-home"></section>
+  <section id="view-form" hidden></section>
+</main>
+
+<div class="actions" id="actions" hidden>
+  <div class="actions-in">
+    <div class="left">
+      <a class="btn" id="homeBtn" href="#/">Accueil</a>
+      <button class="btn danger" id="resetBtn" type="button">Réinitialiser</button>
+    </div>
+    <button class="btn" id="saveBtn" type="button">Enregistrer</button>
+    <button class="btn" id="emailBtn" type="button">Courriel</button>
+    <button class="btn primary" id="printBtn" type="button">Imprimer / PDF</button>
+  </div>
+</div>
+
+<div class="modal top" id="modal" hidden>
+  <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="modalMsg">
+    <p id="modalMsg"></p>
+    <div class="modal-actions">
+      <button class="btn" id="modalNo" type="button"></button>
+      <button class="btn danger" id="modalYes" type="button"></button>
+      <button class="btn danger" id="modalAlt" type="button" hidden></button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="setModal" hidden>
+  <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <h3 id="setTitle"></h3>
+    <div class="admtabs" role="tablist">
+      <button class="btn tabbtn" type="button" role="tab" data-tab="reports"></button>
+      <button class="btn tabbtn" type="button" role="tab" data-tab="conn"></button>
+    </div>
+    <div data-tabpane="reports">
+      <p class="mintro" id="admRepIntro"></p>
+      <div id="admReports"></div>
+      <div class="modal-actions left">
+        <button class="btn" type="button" id="admExport"></button>
+        <label class="btn" for="importFile" id="admImportL"></label><input type="file" id="importFile" accept="application/json,.json" hidden>
+        <button class="btn" type="button" id="admSyncAll"></button>
+      </div>
+    </div>
+    <div data-tabpane="conn" hidden>
+      <p class="mintro" id="connIntro"></p>
+      <dl class="conninfo" id="connInfo"></dl>
+      <div class="modal-actions left"><button class="btn" id="setTest" type="button"></button></div>
+    </div>
+    <p class="mmsg" id="setMsg" role="status"></p>
+    <div class="modal-actions"><button class="btn" id="setLock" type="button"></button><button class="btn primary" id="setClose" type="button"></button></div>
+  </div>
+</div>
+<div class="modal" id="pinModal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="pinTitle">
+    <h3 id="pinTitle"></h3><p class="mintro" id="pinMsg"></p>
+    <div class="f"><label for="pinA" id="pinAL"></label><input id="pinA" type="password" autocomplete="off"></div>
+    <label class="chk"><input type="checkbox" id="pinShow"><span id="pinShowL"></span></label>
+    <p class="mmsg err" id="pinErr" role="alert" hidden></p>
+    <div class="modal-actions"><button class="btn" id="pinCancel" type="button"></button><button class="btn primary" id="pinOk" type="button"></button></div>
+  </div>
+</div>
+<div class="modal" id="mailModal" hidden>
+  <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="mailTitle">
+    <h3 id="mailTitle"></h3>
+    <div class="f"><label for="mTo" id="mToL"></label><input id="mTo" type="text" inputmode="email" autocomplete="email"></div>
+    <div class="f"><label for="mCc" id="mCcL"></label><input id="mCc" type="text" inputmode="email" autocomplete="off"></div>
+    <div class="f"><label for="mSub" id="mSubL"></label><input id="mSub" type="text"></div>
+    <div class="f"><label for="mBody" id="mBodyL"></label><textarea id="mBody" rows="6"></textarea></div>
+    <p class="mhint" id="mNote"></p>
+    <p class="mmsg err" id="mErr" role="alert" hidden></p>
+    <div class="modal-actions"><button class="btn" id="mCancel" type="button"></button><button class="btn primary" id="mSend" type="button"></button></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<div id="print"></div>
+
+<script src="config.js"></script>
+<script src="forms.js"></script>
+<script src="cloud.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
