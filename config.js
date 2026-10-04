@@ -14,7 +14,7 @@
  *   API_TOKEN dans le script + champ token ci-dessous.
  */
 window.FLOFAB_CONFIG = {
-  scriptUrl: "",      // URL de l'application Web du script Google (se termine par /exec)
+  scriptUrl: "https://script.google.com/macros/s/AKfycbxN8B54QjSbNY_30u6TOT-ME7aa577Rfy3tMyZvD7Xl53YzT_KbO56LN_ZW-RNUcWpM/exec",      // URL de l'application Web du script Google (se termine par /exec)
   token: "d58e339805b844f6a30aefc895c4135496bfc2ac9b964ab08260dda108603c02",          // jeton : même valeur que la propriété API_TOKEN du script
   ccDefault: "",      // copie (Cc) proposée dans la fenêtre « Envoyer par courriel » — facultatif
   autoDrive: true     // true = chaque « Enregistrer » envoie aussi le rapport sur Drive ; false = jamais automatique
