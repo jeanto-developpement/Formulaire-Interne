@@ -28,6 +28,11 @@ Optionnel. Un petit script Google (`google-apps-script/Code.gs`, à déployer un
 **Console admin** (🔒, bas de l'accueil, mot de passe vérifié par le script) : suppression / export / import des rapports enregistrés, test de la connexion. Les techniciens n'y ont pas accès.
 Mise en place pas à pas : **[GOOGLE_SETUP.md](GOOGLE_SETUP.md)**. Sans configuration, le bouton Courriel ouvre simplement un courriel à compléter.
 
+## Date, heure et version sur chaque PDF
+Chaque PDF porte, en pied de page : **le formulaire, sa version (et sa date de révision), la date et l'heure d'impression, la référence du rapport**. Les PDF créés par l'app (courriel / Drive) l'ont en vrai texte sur **chaque page** (avec « Page n/N ») et dans les propriétés du fichier. À l'impression par le navigateur, le pied de page est en fin de document, et l'horodatage s'ajoute aussi en haut de la page 1 quand le document dépasse une page. La Feuille d'identification job garde sa ligne « Date et heure d'impression » et y ajoute la version.
+
+**Changer la version d'un formulaire** (à chaque modification de ses champs, libellés ou mise en page) : dans `forms.js`, tableau `VERSIONS` — par exemple `service: ["1.1", "2026-11-15"]` — puis augmenter le numéro dans `sw.js`. La version est aussi enregistrée dans les données envoyées sur Drive (`formVersion`).
+
 ## Fonctions
 - **Langue : français / anglais** — bouton **FR | EN** dans l'en-tête. Il change l'écran *et* le PDF imprimé (français par défaut ; le choix est mémorisé sur l'appareil).
 - **Imprimer / PDF** : reproduit la mise en page des formulaires papier, sur une page Letter (choisir « Enregistrer en PDF »).
@@ -55,7 +60,7 @@ Mise en place pas à pas : **[GOOGLE_SETUP.md](GOOGLE_SETUP.md)**. Sans configur
 - `sw.js`, `manifest.json`, icônes — mode hors ligne et installation
 
 ## Mise à jour
-Après toute modification, changer le numéro de version dans `sw.js` (ex. `flofab-v49` → `flofab-v50`) pour forcer le rafraîchissement sur les appareils.
+Après toute modification, changer le numéro de version dans `sw.js` (ex. `flofab-v50` → `flofab-v51`) pour forcer le rafraîchissement sur les appareils.
 
 ## Confidentialité
 Aucune donnée n'est envoyée à un serveur. Tout est stocké dans le navigateur (localStorage). Effacer les données du navigateur supprime les rapports : exportez-les régulièrement.

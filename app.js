@@ -447,7 +447,14 @@ $("#resetBtn").addEventListener("click", async () => {
 function buildPrint() {
   if (!cur) return;
   markSent("printedAt");
-  $("#print").innerHTML = cur.def.print(cur.state);
+  const holder = $("#print");
+  holder.innerHTML = cur.def.print(cur.state);
+  // document de plus d'une page : l'horodatage + la version figurent aussi en haut de la page 1 (le pied de page est sur la dernière)
+  const P = cur.def.landscape ? { w: 965, h: 748 } : { w: 725, h: 988 };
+  holder.classList.add("capture"); holder.style.width = P.w + "px";
+  const tall = holder.scrollHeight > P.h + 1;
+  holder.classList.remove("capture"); holder.style.width = "";
+  if (tall && !cur.def.ownStamp) holder.insertAdjacentHTML("afterbegin", `<div class="p-stamp">${esc(Flo.stampText(cur.type, cur.state))}</div>`);
   $("#pageStyle").textContent = cur.def.landscape ? "@page{size:letter landscape;margin:9mm 12mm}" : "";
 }
 $("#printBtn").addEventListener("click", () => { if (!validateForm()) return; buildPrint(); setTimeout(() => window.print(), 80); });

@@ -127,4 +127,5 @@ Limites Google : environ **100 courriels/jour** avec un compte Gmail gratuit, **
 ## Bon à savoir
 - Les PDF envoyés par ce circuit sont générés dans le navigateur : ce sont des **images haute résolution** de la page (texte non sélectionnable). Le bouton **Imprimer / PDF** du navigateur garde, lui, un PDF avec texte sélectionnable.
 - Le PDF est dans la langue choisie dans l'application (FR / EN) au moment de l'envoi.
+- Chaque page du PDF porte en pied de page le formulaire, **sa version**, la **date et l'heure** d'envoi et la référence du rapport ; le fichier JSON rangé dans `_données` contient aussi `formVersion`.
 - Les anciens liens de configuration et les réglages enregistrés par les versions précédentes sur les appareils ne sont plus utilisés : ils sont effacés automatiquement.

@@ -113,6 +113,7 @@ async function makePdf(def, state) {
   $$("img[src$='logo.svg']", holder).forEach(i => { i.src = png; });
   holder.classList.add("capture"); holder.style.width = P.w + "px";
   try {
+    if (!def.ownStamp) $$(".p-foot,.p-stamp", holder).forEach(e => e.remove());       // remplacés par le pied de page de chaque page (vrai texte)
     await Promise.all($$("img", holder).map(i => i.complete ? Promise.resolve() : new Promise(r => { i.onload = i.onerror = r; })));
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     const breaks = pageBreaks(holder, P.h), total = holder.scrollHeight;
@@ -139,6 +140,21 @@ async function makePdf(def, state) {
       if (i > 0) pdf.addPage("letter", landscape ? "landscape" : "portrait");
       pdf.addImage(page.toDataURL("image/jpeg", 0.92), "JPEG", MARGIN_X, MARGIN_Y, P.w * 0.75, (y1 - y0 + hh) * 0.75, undefined, "FAST");
     }
+    // pied de page en vrai texte (cherchable) sur chaque page : formulaire, version, date et heure, page n/N
+    const total_ = edges.length - 1, pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
+    const ascii = t => String(t).replace(/—/g, "-").replace(/[^\x20-\xff]/g, "");
+    const left = ascii(`Flo-Fab Inc. · ${def.title} · ${Flo.verLabel(def.id)} · ${L("Réf.", "Ref.")} ${state.id || ""}`);
+    const stamp = Flo.stampNow();
+    if (!def.ownStamp) for (let i = 1; i <= total_; i++) {
+      pdf.setPage(i); pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(90, 90, 90);
+      pdf.text(left, MARGIN_X, ph - 13);
+      pdf.text(ascii(`${L("Imprimé le", "Printed")} ${stamp} · Page ${i}/${total_}`), pw - MARGIN_X, ph - 13, { align: "right" });
+    }
+    const plain = t => String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/—/g, "-");   // les propriétés PDF n'acceptent pas bien les accents
+    pdf.setProperties({
+      title: plain(`${def.title} - ${Flo.verLabel(def.id)}`), subject: plain(`${Flo.verLabel(def.id)} - ${stamp}`), author: "Flo-Fab Inc.",
+      keywords: plain(`formVersion:${def.version}; type:${def.id}; ref:${state.id || ""}; printed:${stamp}`), creator: "Formulaires Flo-Fab"
+    });
     return { base64: pdf.output("datauristring").split(",")[1], pages: edges.length - 1 };
   } finally {
     holder.classList.remove("capture"); holder.style.width = ""; holder.innerHTML = "";
@@ -199,14 +215,14 @@ async function adminCheck(pwd, override) { return post({ action: "adminCheck", p
 
 function metaFor(type, s) {
   const def = FORMS[type];
-  return { type, folder: def.folder, id: s.id, customer: s.customer || s.project || "", job: s.job || s.quote || "", date: s.date || "", tech: s.tech || s.sigTechName || "", lang: Flo.getLang(), title: def.title, fileBase: fileBase(type, s) };
+  return { type, folder: def.folder, id: s.id, customer: s.customer || s.project || "", job: s.job || s.quote || "", date: s.date || "", tech: s.tech || s.sigTechName || "", lang: Flo.getLang(), title: def.title, formVersion: def.version, fileBase: fileBase(type, s) };
 }
 
 // enregistre le PDF + les données (JSON) sur Drive ; avec `email`, envoie aussi le courriel avec le PDF en pièce jointe
 async function send(report, email) {
   const def = FORMS[report.type];
   const pdf = await makePdf(def, report);
-  const copy = JSON.parse(JSON.stringify(report)); delete copy.drive;
+  const copy = JSON.parse(JSON.stringify(report)); delete copy.drive; copy.formVersion = def.version; copy.formRevised = def.revised;
   const res = await post({
     action: email ? "send" : "upload", requestId: (email ? "mail-" : "up-") + report.id + "-" + Date.now().toString(36),
     meta: metaFor(report.type, report), pdfBase64: pdf.base64, json: copy, email: email || null

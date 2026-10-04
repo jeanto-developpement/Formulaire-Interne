@@ -164,7 +164,15 @@ function serviceInit({ host, state, changed }) {
 
 /* ---------- impression : pièces communes ---------- */
 const cb = x => `<span class="p-box">${x ? "✓" : ""}</span>`;
-const foot = s => `<div class="p-foot"><span>Flo-Fab Inc.</span><span>${L("Réf.", "Ref.")} ${v(s.id)}</span></div>`;
+/* ---------- version du formulaire + horodatage : sur TOUS les PDF ---------- */
+let PRINT_TYPE = null;                         // formulaire en cours d'impression (fixé par l'enveloppe de print(), voir registre)
+const p2 = x => String(x).padStart(2, "0");
+const stampNow = () => { const n = new Date(); return `${n.getFullYear()}-${p2(n.getMonth() + 1)}-${p2(n.getDate())} ${p2(n.getHours())}:${p2(n.getMinutes())}`; };
+const verLabel = t => { const f = t && FORMS[t]; return f ? `${L("Version", "Version")} ${f.version}${f.revised ? " (" + L("rév.", "rev.") + " " + f.revised + ")" : ""}` : ""; };
+const titleOf = t => { const f = t && FORMS[t]; return f ? f.title : ""; };
+// ligne d'identification du document : « Titre · Version 1.0 (rév. …) · Imprimé le 2026-10-03 18:26 »
+const stampText = (t, s) => [titleOf(t), verLabel(t), `${L("Imprimé le", "Printed")} ${stampNow()}`, s && s.id ? `${L("Réf.", "Ref.")} ${s.id}` : ""].filter(Boolean).join(" · ");
+const foot = s => `<div class="p-foot"><span>Flo-Fab Inc. · ${v(titleOf(PRINT_TYPE))} · ${v(verLabel(PRINT_TYPE))}</span><span>${L("Imprimé le", "Printed")} ${stampNow()} · ${L("Réf.", "Ref.")} ${v(s.id)}</span></div>`;
 
 function printHead(s) {
   const t = times(s), f = m => m != null ? fmt(m) : "";
@@ -891,9 +899,22 @@ function identPrint(s) {
   return `<div class="i-page">
     <img class="i-logo" src="logo.svg" alt="">
     <div class="i-lines">${line(s.quote, "#Quote")}${line(s.customer, L("Client", "Customer"))}${line(s.project, L("Projet", "Project"))}${line(s.job, "# Job")}</div>
-    <div class="i-foot"><span>${L("Date et heure d'impression :", "Printed on:")}</span> <b>${stamp}</b></div>
+    <div class="i-foot"><span>${L("Date et heure d'impression :", "Printed on:")}</span> <b>${stamp}</b> <span class="i-ver">· ${v(verLabel("ident"))}</span></div>
   </div>`;
 }
+
+/* ---------- versions des formulaires ----------
+   À AUGMENTER à chaque modification d'un formulaire (champs, libellés, mise en page) : le numéro s'imprime sur chaque PDF.
+   Format : [version, date de révision]. */
+const VERSIONS = {
+  service: ["1.0", "2026-10-03"],
+  sub:     ["1.0", "2026-10-03"],
+  sur:     ["1.0", "2026-10-03"],
+  est:     ["1.0", "2026-10-03"],
+  req:     ["1.0", "2026-10-03"],
+  vfd:     ["1.0", "2026-10-03"],
+  ident:   ["1.0", "2026-10-03"]
+};
 
 /* ---------- registre ---------- */
 const FORMS = {
@@ -957,6 +978,13 @@ const FORMS = {
   }
 };
 
+Object.entries(FORMS).forEach(([t, d]) => {
+  d.version = VERSIONS[t][0]; d.revised = VERSIONS[t][1]; d.id = t;
+  const orig = d.print;
+  d.print = function (s) { PRINT_TYPE = t; try { return orig.call(this, s); } finally { PRINT_TYPE = null; } };
+});
+FORMS.ident.ownStamp = true;                   // la feuille a déjà sa propre ligne date / heure / version
+
 /* signature du contenu d'un rapport (ignore les champs de suivi) : sert à savoir s'il a changé depuis l'impression / l'envoi */
 function contentKey(s) {
   const c = Object.assign({}, s);
@@ -965,5 +993,5 @@ function contentKey(s) {
   return JSON.stringify(o);
 }
 
-window.Flo = { FORMS, esc, times, fmt, L, contentKey, setLang: l => { LANG = l === "en" ? "en" : "fr"; }, getLang: () => LANG };
+window.Flo = { FORMS, esc, times, fmt, L, contentKey, stampText, stampNow, verLabel, setLang: l => { LANG = l === "en" ? "en" : "fr"; }, getLang: () => LANG };
 })();

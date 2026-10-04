@@ -427,6 +427,8 @@ table.r-tbl td{vertical-align:middle}
 .i-line.ph{color:#a6a6a6}
 .i-foot{font:10pt Arial,Helvetica,sans-serif;color:#555}
 .i-foot b{font-weight:400;color:#000;margin-left:4px}
+.i-ver{margin-left:4px}
+.p-stamp{font:7.5pt Arial,Helvetica,sans-serif;color:#555;text-align:right;margin:0 0 4px}
 #print.capture{display:block;position:absolute;left:-12000px;top:0;background:#fff;color:#000;font:9.5pt/1.3 Arial,Helvetica,sans-serif}
 #print.capture *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 @media print{

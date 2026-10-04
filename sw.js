@@ -1,5 +1,5 @@
 // Cache hors ligne : l'app fonctionne sans réseau une fois ouverte une première fois.
-const CACHE = "flofab-v49";
+const CACHE = "flofab-v50";
 const FILES = ["./", "index.html", "config.js", "app.css", "app.js", "forms.js", "cloud.js", "vendor/html2canvas.min.js", "vendor/jspdf.umd.min.js", "manifest.json", "logo.svg", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
