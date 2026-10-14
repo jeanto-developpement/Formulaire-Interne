@@ -23,7 +23,7 @@ Communs aux trois : heures bureau/client avec calcul automatique, nom et signatu
 ## Google : courriel avec PDF joint + enregistrement sur Drive
 Optionnel. Un petit script Google (`google-apps-script/Code.gs`, à déployer une fois) permet :
 - **Courriel** : envoi direct avec le PDF en pièce jointe (fenêtre destinataire / Cc / objet / message) ;
-- **Enregistrer** : copie automatique des rapports **destinés aux clients** (service, mises en marche) sur Google Drive, classée par type de formulaire. **Les formulaires internes ne sont jamais envoyés sur Drive** : courriel ou impression seulement ;
+- **Enregistrer** : copie automatique de **tous les formulaires** sur Google Drive, classée par type de formulaire, **sauf la feuille d'identification job** (courriel ou impression seulement) ;
 - reprise automatique après une coupure de réseau (rapports « à synchroniser »).
 **Configuration centralisée** : URL du script et jeton dans `config.js` (GitHub), mot de passe admin / dossier Drive / plafonds dans la console Google Apps Script — **rien à saisir sur les appareils**.
 **Console admin** (🔒, bas de l'accueil, mot de passe vérifié par le script) : suppression / export / import des rapports enregistrés, test de la connexion. Les techniciens n'y ont pas accès.
@@ -73,7 +73,7 @@ Tous les PDF sont au **format Lettre (8,5 × 11 po)** — portrait, sauf la réq
 - `sw.js`, `manifest.json`, icônes — mode hors ligne et installation
 
 ## Mise à jour
-Après toute modification, changer le numéro de version dans `sw.js` (ex. `flofab-v62` → `flofab-v63`) pour forcer le rafraîchissement sur les appareils.
+Après toute modification, changer le numéro de version dans `sw.js` (ex. `flofab-v65` → `flofab-v66`) pour forcer le rafraîchissement sur les appareils.
 
 ## Confidentialité
 Aucune donnée n'est envoyée à un serveur. Tout est stocké dans le navigateur (localStorage). Effacer les données du navigateur supprime les rapports : exportez-les régulièrement.

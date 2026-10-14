@@ -228,7 +228,7 @@ function metaFor(type, s) {
 // Formulaires INTERNES : jamais rangés sur Drive. Seul l'envoi par courriel est possible (le PDF part en pièce jointe, rien n'est conservé).
 async function send(report, email) {
   const def = FORMS[report.type], stores = Flo.storesOnDrive(report.type);
-  if (!stores && !email) throw new Error(L("Ce formulaire interne n'est pas enregistré sur Drive (courriel ou impression seulement).", "This internal form is not saved to Drive (email or print only)."));
+  if (!stores && !email) throw new Error(L("Ce formulaire n'est pas enregistré sur Drive (courriel ou impression seulement).", "This form is not saved to Drive (email or print only)."));
   const pdf = await makePdf(def, report);
   const payload = {
     action: email ? "send" : "upload", requestId: (email ? "mail-" : "up-") + report.id + "-" + Date.now().toString(36),
@@ -353,7 +353,7 @@ function mailDialog(defaults, onSend) {
     $("#mTo").value = defaults.to || c.lastTo || ""; $("#mCc").value = defaults.cc != null ? defaults.cc : c.cc;
     $("#mSub").value = defaults.subject; $("#mBody").value = defaults.body;
     $("#mNote").textContent = defaults.stores === false
-      ? L("Le PDF est joint automatiquement. Formulaire interne : aucune copie n'est enregistrée sur Google Drive.", "The PDF is attached automatically. Internal form: no copy is saved to Google Drive.")
+      ? L("Le PDF est joint automatiquement. Ce formulaire n'est pas enregistré sur Google Drive : aucune copie n'est conservée.", "The PDF is attached automatically. This form is not saved to Google Drive: no copy is kept.")
       : L("Le PDF est joint automatiquement et une copie est enregistrée sur Google Drive.", "The PDF is attached automatically and a copy is saved to Google Drive.");
     $("#mErr").hidden = true; const sendBtn = $("#mSend"), cancel = $("#mCancel");
     let busy = false;

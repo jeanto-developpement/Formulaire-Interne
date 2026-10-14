@@ -926,7 +926,7 @@ const PUMP_INS = [                       // registre des instruments : [fabrican
   ["WIKA S-20", "PT-2025-0144A", "2025-11-04", "2026-11-04", "±0,50% of Span"],
   ["WIKA S-20", "PT-2025-0144B", "2025-11-04", "2026-11-04", "±0,50% of Span"],
   ["Monarch Instrument", "TACH-2026-03B", "2026-03-22", "2027-03-22", "±0,01% of Reading"],
-  ["Fluke 435-II", "PQA-2025-887C", "2026-08-19", "2027-08-19", "±0,50% of Reading"]
+  ["Fluke 435-II", "PQA-2025-887C", "2025-08-19", "2026-08-19", "±0,50% of Reading"]
 ];
 const PUMP_STEPS = [[0.52, 0], [-1.64, 0], [-3.81, 0.1], [-5.97, 0.5], [-7.27, 1.8], [-8.14, 4.2], [-9.43, 8.5]];   // essai NPSH : [P1 psig, chute visée %]
 // dates d'étalonnage / d'échéance : modifiables dans le formulaire ; vides = valeurs du registre ci-dessus
@@ -1140,13 +1140,13 @@ function pumpHtml(p) {
   sec(L("SECTION 3 — ESSAI NPSH TYPE II (NPSH3 AU DÉBIT GARANTI) — HI 14.6 §14.6.5.8.2.2", "SECTION 3 — NPSH TEST TYPE II (NPSH3 AT GUARANTEE FLOW) — HI 14.6 §14.6.5.8.2.2"), `
     <p class="mintro" style="padding:10px 14px 0;margin:0">${L("Seule la température de l'eau se saisit. Les pressions d'aspiration P1 et les chutes visées des 7 étapes sont fixes ; le débit (= point 7), P2, la hauteur, le NPSHA, la chute et le NPSH3 interpolé à 3 % sont calculés. ACCEPTÉ si NPSH3 ≤ NPSHR garanti (aucune tolérance positive, §14.6.5.8.3).", "Only the water temperature is entered. The suction pressures P1 and target drops of the 7 steps are fixed; flow (= point 7), P2, head, NPSHA, drop and the NPSH3 interpolated at 3% are calculated. PASS requires NPSH3 ≤ guaranteed NPSHR — no positive tolerance (§14.6.5.8.3).")}</p>
     <div class="grid2">${fld(p, "Tw", L("Température de l'eau Tw (°F)", "Water temperature Tw (°F)"), { mode: "decimal" })}</div>
-    <div class="fixrow"><span>${L("Pression barométrique Patm", "Barometric pressure Patm")} <b>14,696</b> psia <em>${L("fixe (niveau de la mer)", "fixed (sea level)")}</em></span></div>
+    <div class="fixrow"><span>${L("Pression barométrique Patm", "Barometric pressure Patm")} <b>14,696</b> psia <em>${L("fixe (niveau de la mer)", "fixed (sea level)")}</em></span><span>${L("NPSHR garanti", "Guaranteed NPSHR")} <b data-np="npshr">—</b> ft <em>${L("de « Informations sur la pompe »", "from “Pump information”")}</em></span></div>
     <div class="pout" style="padding:0 14px 6px"><span>${L("Pression de vapeur Pvap", "Vapour pressure Pvap")} <b data-np="pvap">—</b> psia</span><span>${L("Débit d'essai (= point 7, brut)", "Test flow (= point 7, raw)")} <b data-np="qtest">—</b> GPM</span><span>${L("Hauteur de référence Href (point 7, brute)", "Reference head Href (point 7, raw)")} <b data-np="href">—</b> ft</span></div>
     ${PUMP_STEPS.map(([p1, tg], j) => `<div class="mrow"><div class="mrow-h"><b>${L("Étape", "Step")}&nbsp;${j + 1}</b><span class="fixv">P1 ${nf(p1, 2)} psig · ${L("chute visée", "target drop")} ${nf(tg, 1)} % · <em>${L("fixes", "fixed")}</em></span></div>
       <div class="pout" data-st="${j}" aria-live="polite"></div></div>`).join("")}
     <div class="etot"><span>NPSH3 (${L("interpolé à 3 % de chute", "interpolated at 3% drop")})</span><span><b data-np="npsh3">—</b> ft</span><span data-np="status"></span></div>
     <div class="npnote" data-np="why"></div>
-    <div class="pout" style="padding:6px 14px 10px"><span>${L("INFORMATIF — NPSHa à la condition normale (non étranglée)", "INFORMATIONAL — NPSHa at the normal (non-throttled) duty condition")} <b data-np="npsha">—</b> ft</span><span>${L("Marge installée (NPSHa − NPSHR garanti)", "Installed margin (NPSHa − guaranteed NPSHR)")} <b data-np="margin">—</b> ft</span></div>`) +
+    <div class="pout" style="padding:6px 14px 10px"><span>${L("INFORMATIF — NPSHa à la condition normale (non étranglée)", "INFORMATIONAL — NPSHa at the normal (non-throttled) duty condition")} <b data-np="npsha">—</b> ft</span><span>${L("Marge installée (NPSHa − NPSHR garanti)", "Installed margin (NPSHa − guaranteed NPSHR)")} <b data-np="margin">—</b> ft <span class="fixv" data-np="marginf"></span></span></div>`) +
   sec(L("SECTION 4 — COURBES DE PERFORMANCE ET ZONE D'EXPLOITATION PRÉFÉRÉE (POR)", "SECTION 4 — PERFORMANCE CURVE ANALYSIS (BEST EFFICIENCY & PREFERRED OPERATING ZONE)"), `
     <div class="pout" style="padding:10px 14px 0"><span>${L("Débit de référence BEP (Qg)", "Reference BEP flow (Qg)")} <b data-por="qg">—</b> GPM</span><span>POR ${L("min (70 % Qg)", "min (70% Qg)")} <b data-por="min">—</b> GPM</span><span>POR ${L("max (120 % Qg)", "max (120% Qg)")} <b data-por="max">—</b> GPM</span><span>${L("Point de service (Qc / Hc)", "Duty point (Qc / Hc)")} <b data-por="duty">—</b></span></div>
     <p class="mintro" style="padding:6px 14px 0;margin:0">${L("Un point en surcharge (au-dessus du débit garanti) est ajouté (§14.6.5.7.1). Le vrai BEP peut se situer hors de la plage d'essai.", "An overload point above the guarantee flow (§14.6.5.7.1) is included. The true best-efficiency point may lie beyond the tested range.")}</p>
@@ -1178,6 +1178,7 @@ function pumpRefresh(host, s) {
   setT('[data-np="npsh3"]', nfd(c.npsh3)); setH('[data-np="status"]', chipHtml(c.npshStatus));
   setT('[data-np="why"]', c.npsh3 != null ? "" : ({ few: L("Saisissez au moins deux étapes complètes (P1 et P2) pour interpoler le NPSH3.", "Enter at least two complete steps (P1 and P2) to interpolate NPSH3."), low: L("Aucune étape n'atteint 3 % de chute : poursuivez l'essai (réduire encore le NPSHA) jusqu'à dépasser 3 %.", "No step reaches a 3% drop: continue the test (reduce NPSHA further) until it exceeds 3%."), order: L("Les étapes doivent se suivre par NPSHA décroissant (chute croissante) pour encadrer 3 %.", "Steps must follow in decreasing NPSHA (increasing drop) so that 3% is bracketed.") }[c.npsh3Why] || ""));
   setT('[data-np="npsha"]', nfd(c.npshaNormal)); setT('[data-np="margin"]', nfd(c.margin));
+  setT('[data-np="npshr"]', nfd(c.NPSHr)); setT('[data-np="marginf"]', c.margin != null ? `= ${nf(c.npshaNormal)} − ${nf(c.NPSHr)}` : "");
   setT('[data-por="qg"]', nfd(num(s.Qg), 0)); setT('[data-por="min"]', nfd(lim.PorMin, 0)); setT('[data-por="max"]', nfd(lim.PorMax, 0));
   setT('[data-por="duty"]', c.duty.qc != null && c.duty.hc != null ? `${nf(c.duty.qc, 1)} GPM / ${nf(c.duty.hc, 2)} ft` : "—");
   const ch = pumpCharts(c, false); setH('[data-chart="perf"]', ch.perf); setH('[data-chart="pow"]', ch.pow);
@@ -1257,7 +1258,7 @@ function pumpPrint(s) {
       <tbody><tr><td>${L("Limites", "Limits")}</td>${vdRow.map(([, t]) => `<td class="ctr">${t}</td>`).join("")}</tr>
       <tr><td>${L("7 (Point de service)", "7 (Duty Point)")}</td>${["flow", "head", "power", "eff", "npsh"].map(k => tdp(st(c.vd[k]), c.vd[k] ? pumpWord(c.vd[k]) : "—")).join("")}</tr></tbody></table>
       <table class="p t-tbl" style="margin-top:4px"><colgroup><col style="width:70%"><col style="width:30%"></colgroup><tbody><tr><td><b>${L("VERDICT FINAL", "FINAL VERDICT")}</b> — ACCEPT / REJECT</td>${tdp(st(c.vd.final), `<b>${c.vd.final ? pumpWord(c.vd.final) : L("EN ATTENTE", "PENDING")}</b>`)}</tr></tbody></table>`)}
-  ${sec(L("SECTION 6 — COMMENTAIRES / REMARQUES", "SECTION 6 — COMMENTS / REMARKS"), `<div class="t-note">${L("Écarts, observations, mesures correctives ou autres remarques sur cet essai :", "Record any deviations, observations, corrective actions, or other remarks regarding this test:")}</div><div class="t-lines"></div>`)}
+  ${sec(L("SECTION 6 — COMMENTAIRES / REMARQUES", "SECTION 6 — COMMENTS / REMARKS"), `<div class="t-note">${L("Écarts, observations, mesures correctives ou autres remarques sur cet essai :", "Record any deviations, observations, corrective actions, or other remarks regarding this test:")}</div><div class="t-lines">${"<div></div>".repeat(5)}</div>`)}
   <div class="avoid"><div class="m-bar">${L("SECTION 7 — SIGNATURES DES TÉMOINS", "SECTION 7 — WITNESS SIGN-OFF SIGNATURE BLOCK")}</div><div class="t-sigs">${[["Mfr", L("Représentant du fabricant", "Manufacturer rep signature")], ["Wit", L("Ingénieur témoin", "Witness engineer signature")], ["Tpi", L("Inspecteur tiers", "Third party inspector signature")]].map(([k, lab]) => `<div class="t-sig"><div class="t-sigl"></div><div><b>${lab}</b></div><div>Date : <b>${v(s[`sig${k}Date`])}</b></div></div>`).join("")}</div></div>
   ${sec(L("SECTION 8 — HISTORIQUE DES RÉVISIONS DU DOCUMENT", "SECTION 8 — DOCUMENT REVISION HISTORY"), `<table class="p t-tbl"><colgroup><col style="width:7%"><col style="width:15%"><col><col style="width:18%"></colgroup><thead><tr><th>Rev</th><th>Date</th><th>Description</th><th>${L("Par", "By")}</th></tr></thead><tbody>${REVS.map(r => `<tr><td class="ctr">${r[0]}</td><td class="ctr">${r[1]}</td><td>${v(r[2])}</td><td>${v(r[3])}</td></tr>`).join("")}</tbody></table>`)}` + foot(s);
 }
@@ -1363,7 +1364,9 @@ function contentKey(s) {
 }
 
 /* formulaires internes : jamais rangés sur Google Drive (courriel ou impression seulement) */
-const storesOnDrive = t => !!FORMS[t] && FORMS[t].group !== "internal";
+/* tous les formulaires sont enregistrés sur Google Drive, SAUF la feuille d'identification job (courriel ou impression seulement) */
+const NO_DRIVE = ["ident"];
+const storesOnDrive = t => !!FORMS[t] && !NO_DRIVE.includes(t);
 
 window.Flo = { FORMS, esc, times, fmt, L, contentKey, stampText, stampNow, verLabel, storesOnDrive, pumpCalc, setLang: l => { LANG = l === "en" ? "en" : "fr"; }, getLang: () => LANG };
 })();

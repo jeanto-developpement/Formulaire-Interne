@@ -271,7 +271,7 @@ function showHome() {
                   : `<span class="tag warn">${L("À imprimer ou envoyer", "To print or email")}</span>`}</div>
       <a class="btn" href="#/${r.type}/${r.id}">${L("Ouvrir", "Open")}</a></li>`;
   const list = reportsSorted();
-  const newForms = GROUPS.map(g => `<h3 class="grp">${esc(g.title)}</h3>${g.id === "internal" ? `<p class="grpnote">${L("Non enregistrés sur Google Drive : envoi par courriel ou impression seulement.", "Not saved to Google Drive: email or print only.")}</p>` : ""}
+  const newForms = GROUPS.map(g => `<h3 class="grp">${esc(g.title)}</h3>${g.id === "internal" ? `<p class="grpnote">${L("Tous enregistrés sur Google Drive, sauf la feuille d'identification job (courriel ou impression seulement).", "All saved to Google Drive, except the job identification sheet (email or print only).")}</p>` : ""}
     <div class="cards">${Object.entries(FORMS).filter(([, d]) => d.group === g.id).map(card).join("")}</div>`).join("");
   const saved = list.length
     ? GROUPS.map(g => {
@@ -445,11 +445,17 @@ $("#resetBtn").addEventListener("click", async () => {
   mountForm(); window.scrollTo(0, 0); setStatus("");
   toast(ok === "alt" ? L("Formulaire réinitialisé et rapport supprimé", "Form reset and report deleted") : L("Formulaire réinitialisé", "Form reset"));
 });
+let LOGO_SVG = "";
+fetch("logo.svg").then(r => r.ok ? r.text() : "").then(t => { if (/^\s*<svg[\s>]/.test(t)) LOGO_SVG = t; }).catch(() => {});
 function buildPrint() {
   if (!cur) return;
   markSent("printedAt");
   const holder = $("#print");
   holder.innerHTML = cur.def.print(cur.state);
+  // logo intégré directement (SVG) : il s'imprime comme un dessin, sans dépendre du chargement d'une image (ex. Microsoft Print to PDF)
+  if (LOGO_SVG) holder.querySelectorAll('img[src="logo.svg"]').forEach(img => {
+    const span = document.createElement("span"); span.className = ("logo-inline " + (img.className || "")).trim(); span.innerHTML = LOGO_SVG; img.replaceWith(span);
+  });
   // document de plus d'une page : l'horodatage + la version figurent aussi en haut de la page 1 (le pied de page est sur la dernière)
   const P = cur.def.landscape ? { w: 965, h: 748 } : { w: 725, h: 988 };
   holder.classList.add("capture"); holder.style.width = P.w + "px"; holder.style.padding = "0";      // mesure du contenu seul (sans les marges de la feuille)
