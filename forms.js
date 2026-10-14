@@ -926,7 +926,7 @@ const PUMP_INS = [                       // registre des instruments : [fabrican
   ["WIKA S-20", "PT-2025-0144A", "2025-11-04", "2026-11-04", "±0,50% of Span"],
   ["WIKA S-20", "PT-2025-0144B", "2025-11-04", "2026-11-04", "±0,50% of Span"],
   ["Monarch Instrument", "TACH-2026-03B", "2026-03-22", "2027-03-22", "±0,01% of Reading"],
-  ["Fluke 435-II", "PQA-2025-887C", "2026-08-19", "2027-08-19", "±0,50% of Reading"]
+  ["Fluke 435-II", "PQA-2025-887C", "2025-08-19", "2026-08-19", "±0,50% of Reading"]
 ];
 const PUMP_STEPS = [[0.52, 0], [-1.64, 0], [-3.81, 0.1], [-5.97, 0.5], [-7.27, 1.8], [-8.14, 4.2], [-9.43, 8.5]];   // essai NPSH : [P1 psig, chute visée %]
 // dates d'étalonnage / d'échéance : modifiables dans le formulaire ; vides = valeurs du registre ci-dessus
@@ -1127,14 +1127,12 @@ function pumpHtml(p) {
       <div class="pout"><span>${v(PUMP_INS[i][0])}</span><span>${L("N° de série", "Serial")} <b>${v(PUMP_INS[i][1])}</b></span><span>${v(PUMP_INS[i][4])}</span></div>
       <div class="mgrid"><div class="s3">${mfDate(L("Date d'étalonnage", "Calibration date"), `ins${i + 1}_cal`)}</div><div class="s3">${mfDate(L("Échéance d'étalonnage", "Calibration due"), `ins${i + 1}_due`)}</div></div></div>`).join("")) +
   sec(L("SECTION 1 — DONNÉES BRUTES (CAPTEURS DU BANC D'ESSAI)", "SECTION 1 — RAW DATA ACQUISITION LOG (FROM TEST STAND SENSORS)"), `
-    <p class="mintro" style="padding:10px 14px 0;margin:0">${L("Saisissez les mesures du banc d'essai. Le TDH brut se calcule seul.", "Enter the test-stand readings. The raw TDH is calculated automatically.")}</p>
-    ${PT_LBL.map(([en, fr], i) => `<div class="mrow">
-      <div class="mrow-h"><b>${L("Point", "Test point")} ${L(fr, en)}</b></div>
-      <div class="mgrid">
-        <div class="s2">${mfD(L("Vitesse Nt (rpm)", "Speed Nt (rpm)"), `r${i + 1}_N`)}</div><div class="s2">${mfD(L("Débit Qt (GPM)", "Flow Qt (GPM)"), `r${i + 1}_Q`)}</div><div class="s2">${mfD(L("Courant I (A)", "Current I (A)"), `r${i + 1}_I`)}</div>
-        <div class="s3">${mfN(L("Pression aspiration P1 (psi)", "Suction pressure P1 (psi)"), `r${i + 1}_P1`)}</div><div class="s3">${mfN(L("Pression refoulement P2 (psi)", "Discharge pressure P2 (psi)"), `r${i + 1}_P2`)}</div>
-      </div>
-      <div class="pout" data-pt="${i}" aria-live="polite"></div></div>`).join("")}`) +
+    <p class="mintro" style="padding:10px 14px;margin:0">${L("Saisissez les mesures dans les cases beiges, comme dans la feuille Excel. Le TDH brut se calcule seul.", "Enter the readings in the beige cells, as in the Excel sheet. The raw TDH is calculated automatically.")}</p>
+    <div class="rawwrap" role="region" aria-label="${L("Tableau des données brutes", "Raw data table")}" tabindex="0"><table class="rawt">
+      <thead><tr><th>${L("Point d'essai", "Test Point")}<br><small>#</small></th><th>${L("Vitesse (Nt)", "Speed (Nt)")}<br><small>rpm</small></th><th>${L("Débit (Qt)", "Flow (Qt)")}<br><small>GPM</small></th><th>${L("Press. aspiration (P1)", "Suction Pres (P1)")}<br><small>PSI</small></th><th>${L("Press. refoulement (P2)", "Discharge Pres (P2)")}<br><small>PSI</small></th><th>${L("Courant (I)", "Current (I)")}<br><small>${L("A", "Amps")}</small></th><th>TDH (${L("brut", "raw")})<br><small>ft</small></th></tr></thead>
+      <tbody>${PT_LBL.map(([en, fr], i) => { const lab = L(fr, en), n = i + 1, cell = (k, mode, name) => `<td><input data-k="r${n}_${k}" ${mode === "neg" ? 'inputmode="text" autocapitalize="off" spellcheck="false"' : 'inputmode="decimal"'} autocomplete="off" aria-label="${L("Point", "Point")} ${n} — ${name}"></td>`;
+        return `<tr><th scope="row">${lab}</th>${cell("N", "", L("vitesse (rpm)", "speed (rpm)"))}${cell("Q", "", L("débit (GPM)", "flow (GPM)"))}${cell("P1", "neg", L("pression d'aspiration P1 (psi)", "suction pressure P1 (psi)"))}${cell("P2", "neg", L("pression de refoulement P2 (psi)", "discharge pressure P2 (psi)"))}${cell("I", "", L("courant (A)", "current (A)"))}<td class="calc" data-tdh="${i}">—</td></tr>`; }).join("")}</tbody>
+    </table></div>`) +
   sec(L("SECTION 2 — CONVERSIONS PAR LES LOIS D'AFFINITÉ (CALCULÉES, NORMALISÉES À Nr)", "SECTION 2 — SPEED-CORRECTED AFFINITY LAW CONVERSIONS (CALCULATED, NORMALIZED TO Nr)"), `
     <p class="mintro" style="padding:10px 14px 0;margin:0">${L("Section calculée automatiquement à partir de la section 1 : rien à saisir.", "Calculated automatically from section 1: nothing to enter.")}</p>
     <div class="esum"><table class="esum-t calc2"><thead><tr><th>${L("Point", "Point")}</th><th>Qc<br><small>GPM</small></th><th>Hc<br><small>ft</small></th><th>Pc<br><small>HP</small></th><th>ηc<br><small>%</small></th></tr></thead>
@@ -1171,7 +1169,7 @@ function pumpRefresh(host, s) {
   setT('[data-pc="pg_g"]', nfd(lim.Pg, 2)); setT('[data-pc="pg_g2"]', nfd(lim.Pg, 2)); setT('[data-pc="pg_l"]', lim.Pmax != null ? `≤ ${nf(lim.Pmax, 2)}` : "—");
   setT('[data-pc="eg_g"]', nfd(num(s.effG), 2)); setT('[data-pc="eg_l"]', lim.Emin != null ? `≥ ${nf(lim.Emin, 2)}` : "—");
   c.pts.forEach((p, i) => {
-    setH(`[data-pt="${i}"]`, `<span class="calc">${L("Calculé :", "Calculated:")}</span><span>${L("TDH brut", "Raw TDH")} <b>${nfd(p.tdh)}</b> ft</span>`);
+    setT(`[data-tdh="${i}"]`, nfd(p.tdh));
     setT(`[data-c2="${i}_qc"]`, nfd(p.qc, 1)); setT(`[data-c2="${i}_hc"]`, nfd(p.hc)); setT(`[data-c2="${i}_pc"]`, nfd(p.pc)); setT(`[data-c2="${i}_eff"]`, nfd(p.eff));
   });
   c.ins.forEach((st, i) => setH(`[data-ins="${i}"]`, st == null ? "" : st === "ok" ? `<span class="chip ok">✓ ${L("Étalonnage valide", "Calibration valid")}</span>` : `<span class="chip ko">⚠ ${L("Étalonnage échu", "Calibration expired")}</span>`));

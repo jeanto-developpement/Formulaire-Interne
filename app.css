@@ -315,6 +315,20 @@ textarea{resize:vertical}
 .fixrow b{color:var(--ink)}.fixrow em,.fixv em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:8px;background:var(--field);margin-left:4px}
 .fixv{font-size:.82rem;color:var(--muted)}
 .mrow-h{flex-wrap:wrap;row-gap:2px}
+/* section 1 du test de pompe : tableau de saisie comme la feuille Excel (cases beiges = saisie) */
+.rawwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-top:1px solid var(--line)}
+.rawt{border-collapse:collapse;width:100%;min-width:600px;font-size:.88rem}
+.rawt th,.rawt td{border:1px solid #c9d3df;padding:0}
+.rawt thead th{background:#dce6f1;color:#1f3b5c;text-align:left;padding:6px 8px;font-weight:700;vertical-align:top;line-height:1.25}
+.rawt thead th:first-child{position:sticky;left:0;z-index:2}
+.rawt thead small{font-size:.82rem;font-weight:700}
+.rawt tbody th{position:sticky;left:0;z-index:1;background:var(--paper);text-align:left;padding:6px 8px;white-space:nowrap;font-weight:400}
+.rawt td input{display:block;width:100%;min-width:70px;min-height:40px;border:0;border-radius:0;margin:0;background:#fff2cc;color:#111;padding:8px 8px;text-align:right;font-size:16px;font-variant-numeric:tabular-nums}
+.rawt td input:focus{outline:2px solid var(--blue);outline-offset:-2px;background:#fff8dc}
+.rawt td.calc{text-align:right;padding:6px 8px;background:var(--paper);font-variant-numeric:tabular-nums;white-space:nowrap}
+:root[data-theme="dark"] .rawt thead th{background:#1d3550;color:#d6e4f5}
+:root[data-theme="dark"] .rawt td input{background:#4a3f1c;color:#fff4d6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .rawt thead th{background:#1d3550;color:#d6e4f5}:root:not([data-theme="light"]) .rawt td input{background:#4a3f1c;color:#fff4d6}}
 .tolrow{padding:10px 14px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:2px 18px;font-size:.9rem}
 .tolrow>b:first-child{flex:1 1 100%;font-size:.98rem}
 .tolrow span b{font-variant-numeric:tabular-nums}
