@@ -35,7 +35,7 @@ Réglages du script (⚙ **Paramètres du projet → Propriétés du script**) :
 | `ROOT_FOLDER_ID` | ID d'un dossier Drive existant où tout sera rangé | dossier « Flo-Fab - Formulaires » créé automatiquement |
 | `ALWAYS_CC` | Adresse(s) mises en copie de **tous** les courriels (ex. boîte de l'entreprise) | aucune |
 | `FROM_NAME` | Nom affiché de l'expéditeur | Flo-Fab Inc. |
-| `NO_DRIVE_TYPES` | Formulaires **jamais rangés sur Drive** (courriel seulement), séparés par des virgules. Règle appliquée par le script lui-même. | `est,req,vfd,ident` (les formulaires internes) |
+| `NO_DRIVE_TYPES` | Formulaires **jamais rangés sur Drive** (courriel seulement), séparés par des virgules. Règle appliquée par le script lui-même. | `est,req,vfd,ident,pump` (les formulaires internes) |
 | `MAX_EMAILS_PER_DAY` | Plafond de destinataires (to + cc) par jour | 60 |
 | `MAX_UPLOADS_PER_DAY` | Plafond de fichiers rangés sur Drive par jour | 400 |
 
@@ -83,7 +83,7 @@ Limites :
 - **Mot de passe oublié** : dans la console Google Apps Script, supprimez la propriété `ADMIN_PASSWORD`, exécutez `creerAcces`, lisez le nouveau mot de passe dans le journal.
 
 ## Formulaires internes : jamais sur Drive
-Les **formulaires internes** (Estimation, Réquisition d'achat, QC contrôle programmation, Feuille d'identification job) **ne sont jamais enregistrés sur Google Drive** : on peut seulement les **envoyer par courriel** (PDF joint, rien n'est conservé) ou les **imprimer**. Ils restent enregistrés sur l'appareil (bouton Enregistrer) pour être repris, mais aucune copie n'est envoyée au script. La règle est appliquée **deux fois** : par l'application, et par le script (propriété `NO_DRIVE_TYPES`), qui refuse de ranger ces types même si une version modifiée de l'application le demandait.
+Les **formulaires internes** (Estimation, Réquisition d'achat, QC contrôle programmation, Feuille d'identification job, Test de performance de pompe) **ne sont jamais enregistrés sur Google Drive** : on peut seulement les **envoyer par courriel** (PDF joint, rien n'est conservé) ou les **imprimer**. Ils restent enregistrés sur l'appareil (bouton Enregistrer) pour être repris, mais aucune copie n'est envoyée au script. La règle est appliquée **deux fois** : par l'application, et par le script (propriété `NO_DRIVE_TYPES`), qui refuse de ranger ces types même si une version modifiée de l'application le demandait.
 Les formulaires destinés aux clients (Rapport de service, Mise en marche Submersible / Surpresseur) continuent d'être rangés sur Drive.
 *Les copies déjà rangées sur Drive avant cette règle ne sont pas supprimées automatiquement : retirez-les à la main dans le dossier Drive si besoin.*
 
