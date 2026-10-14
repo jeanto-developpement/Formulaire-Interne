@@ -16,7 +16,7 @@ const LOCAL = "flofab-cloud-local";
 const conf = () => window.FLOFAB_CONFIG || {};
 const cfg = () => ({
   url: String(conf().scriptUrl || "").trim(), token: String(conf().token || "").trim(),
-  cc: String(conf().ccDefault || "").trim(), auto: conf().autoDrive !== false,
+  cc: String(conf().ccDefault || "").trim(), auto: conf().autoDrive !== false, printMode: String(conf().printMode || "auto"),
   lastTo: store.get(LOCAL, {}).lastTo || ""
 });
 const saveCfg = patch => { if (patch && "lastTo" in patch) store.set(LOCAL, { lastTo: String(patch.lastTo || "") }); };
@@ -117,8 +117,10 @@ async function makePdf(def, state) {
     await Promise.all($$("img", holder).map(i => i.complete ? Promise.resolve() : new Promise(r => { i.onload = i.onerror = r; })));
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     const breaks = pageBreaks(holder, P.h), total = holder.scrollHeight;
-    const canvas = await window.html2canvas(holder, {
-      scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false, width: P.w, windowWidth: 1400,
+    // Rendu PAR TRANCHES (une page à la fois) : jamais d'image géante. Safari (iPhone / iPad) plafonne la taille d'un canvas
+    // (≈ 16,7 millions de pixels) et manque de mémoire sur les longs documents ; chaque tranche reste sous 3 millions de pixels.
+    const capture = (y, h) => window.html2canvas(holder, {
+      scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false, x: 0, y, width: P.w, height: Math.max(1, Math.ceil(h)), windowWidth: 1400,
       onclone: doc => {
         const el = doc.getElementById("print");
         el.style.position = "absolute"; el.style.left = "0"; el.style.top = "0";
@@ -127,18 +129,22 @@ async function makePdf(def, state) {
         drawRuledLines(doc, el, ".m-nl", 20, "#000");
       }
     });
+    const release = cv => { try { cv.width = 0; cv.height = 0; } catch (e) {} };           // libère la mémoire tout de suite (iOS)
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ unit: "pt", format: "letter", orientation: landscape ? "landscape" : "portrait", compress: true });
     const edges = [0, ...breaks.map(b => b.y), total];
     for (let i = 0; i < edges.length - 1; i++) {
       const y0 = edges[i], y1 = edges[i + 1], head = i > 0 ? breaks[i - 1].head : null;
-      const hh = head ? head.y1 - head.y0 : 0, bodyH = Math.max(1, Math.round((y1 - y0) * 2)), headH = Math.round(hh * 2);
-      const page = document.createElement("canvas"); page.width = canvas.width; page.height = bodyH + headH;
+      const body = await capture(y0, y1 - y0), headC = head ? await capture(head.y0, head.y1 - head.y0) : null;
+      const headH = headC ? headC.height : 0;
+      const page = document.createElement("canvas"); page.width = body.width; page.height = body.height + headH;
       const ctx = page.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, page.width, page.height);
-      if (head) ctx.drawImage(canvas, 0, Math.round(head.y0 * 2), canvas.width, headH, 0, 0, canvas.width, headH);
-      ctx.drawImage(canvas, 0, Math.round(y0 * 2), canvas.width, bodyH, 0, headH, canvas.width, bodyH);
+      if (headC) ctx.drawImage(headC, 0, 0);
+      ctx.drawImage(body, 0, headH);
+      const hPt = page.height / 2 * 0.75;
       if (i > 0) pdf.addPage("letter", landscape ? "landscape" : "portrait");
-      pdf.addImage(page.toDataURL("image/jpeg", 0.92), "JPEG", MARGIN_X, MARGIN_Y, P.w * 0.75, (y1 - y0 + hh) * 0.75, undefined, "FAST");
+      pdf.addImage(page.toDataURL("image/jpeg", 0.92), "JPEG", MARGIN_X, MARGIN_Y, P.w * 0.75, hPt, undefined, "FAST");
+      release(body); release(page); if (headC) release(headC);
     }
     // pied de page en vrai texte (cherchable) sur chaque page : formulaire, version, date et heure, page n/N
     const total_ = edges.length - 1, pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
@@ -218,16 +224,19 @@ function metaFor(type, s) {
   return { type, folder: def.folder, id: s.id, customer: s.customer || s.project || "", job: s.job || s.quote || "", date: s.date || "", tech: s.tech || s.sigTechName || "", lang: Flo.getLang(), title: def.title, formVersion: def.version, fileBase: fileBase(type, s) };
 }
 
-// enregistre le PDF + les données (JSON) sur Drive ; avec `email`, envoie aussi le courriel avec le PDF en pièce jointe
+// Drive : PDF + données (JSON) pour les formulaires destinés aux clients ; avec `email`, envoie aussi le courriel avec le PDF joint.
+// Formulaires INTERNES : jamais rangés sur Drive. Seul l'envoi par courriel est possible (le PDF part en pièce jointe, rien n'est conservé).
 async function send(report, email) {
-  const def = FORMS[report.type];
+  const def = FORMS[report.type], stores = Flo.storesOnDrive(report.type);
+  if (!stores && !email) throw new Error(L("Ce formulaire interne n'est pas enregistré sur Drive (courriel ou impression seulement).", "This internal form is not saved to Drive (email or print only)."));
   const pdf = await makePdf(def, report);
-  const copy = JSON.parse(JSON.stringify(report)); delete copy.drive; copy.formVersion = def.version; copy.formRevised = def.revised;
-  const res = await post({
+  const payload = {
     action: email ? "send" : "upload", requestId: (email ? "mail-" : "up-") + report.id + "-" + Date.now().toString(36),
-    meta: metaFor(report.type, report), pdfBase64: pdf.base64, json: copy, email: email || null
-  });
-  return { res, pages: pdf.pages, info: { at: new Date().toISOString(), url: res.pdfUrl || "", id: res.pdfId || "", folder: res.folderUrl || "" } };
+    store: stores, meta: metaFor(report.type, report), pdfBase64: pdf.base64, email: email || null
+  };
+  if (stores) { const copy = JSON.parse(JSON.stringify(report)); delete copy.drive; copy.formVersion = def.version; copy.formRevised = def.revised; payload.json = copy; }
+  const res = await post(payload);
+  return { res, pages: pdf.pages, info: stores ? { at: new Date().toISOString(), url: res.pdfUrl || "", id: res.pdfId || "", folder: res.folderUrl || "" } : null };
 }
 
 /* ======================================================================
@@ -343,7 +352,9 @@ function mailDialog(defaults, onSend) {
     const m = $("#mailModal"), c = cfg();
     $("#mTo").value = defaults.to || c.lastTo || ""; $("#mCc").value = defaults.cc != null ? defaults.cc : c.cc;
     $("#mSub").value = defaults.subject; $("#mBody").value = defaults.body;
-    $("#mNote").textContent = L("Le PDF est joint automatiquement et une copie est enregistrée sur Google Drive.", "The PDF is attached automatically and a copy is saved to Google Drive.");
+    $("#mNote").textContent = defaults.stores === false
+      ? L("Le PDF est joint automatiquement. Formulaire interne : aucune copie n'est enregistrée sur Google Drive.", "The PDF is attached automatically. Internal form: no copy is saved to Google Drive.")
+      : L("Le PDF est joint automatiquement et une copie est enregistrée sur Google Drive.", "The PDF is attached automatically and a copy is saved to Google Drive.");
     $("#mErr").hidden = true; const sendBtn = $("#mSend"), cancel = $("#mCancel");
     let busy = false;
     sendBtn.disabled = false; cancel.disabled = false; sendBtn.textContent = L("Envoyer", "Send");

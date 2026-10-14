@@ -19,7 +19,7 @@
 html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--sans);-webkit-text-size-adjust:100%}
-button,input,textarea{font:inherit;color:inherit}
+button,input,textarea,select{font:inherit;color:inherit}
 
 /* Top bar */
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--paper);border-bottom:3px solid var(--brand)}
@@ -59,7 +59,10 @@ main{max-width:880px;margin:0 auto;padding:16px 16px 120px}
 
 /* Time table */
 .times{display:grid;grid-template-columns:repeat(3,1fr)}
-.tcol{padding:12px 14px;border-right:1px solid var(--line)}
+.tcol{padding:12px 14px;border-right:1px solid var(--line);min-width:0}
+.times{min-width:0}
+input[type=time],input[type=date]{min-width:0;max-width:100%;min-height:42px;text-align:left;-webkit-appearance:none;appearance:none}
+input[type=time]::-webkit-date-and-time-value,input[type=date]::-webkit-date-and-time-value{text-align:left}
 .tcol:last-child{border-right:0;background:var(--blueSoft)}
 .tcol h3{font:700 .95rem var(--cond);margin:0 0 8px;letter-spacing:.02em}
 .tcol .f{padding:0;border:0;margin-bottom:10px}
@@ -67,7 +70,7 @@ main{max-width:880px;margin:0 auto;padding:16px 16px 120px}
 .tot:last-child{border-bottom:0}
 .tot b{font:700 1.15rem var(--cond);font-variant-numeric:tabular-nums}
 .tot.grand b{font-size:1.5rem;color:var(--blue)}
-.now{font-size:.75rem;font-weight:600;color:var(--blue);background:none;border:0;padding:0;cursor:pointer;align-self:flex-start;margin-top:2px}
+.now{font-size:.8rem;font-weight:600;color:var(--blue);background:none;border:0;padding:10px 6px 10px 0;min-height:40px;min-width:44px;text-align:left;cursor:pointer;align-self:flex-start;margin-top:0}
 
 /* Reasons */
 .reasons{display:grid;grid-template-columns:repeat(6,1fr)}
@@ -150,6 +153,9 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 }
 @media (max-width:520px){.logo{height:36px}.top-in{gap:8px;padding:8px 12px}.lang button{padding:8px 9px}}
 @media (max-width:700px){.actions-in{gap:6px}.actions .btn{padding:8px 6px;font-size:.86rem;white-space:nowrap}.brand h1{font-size:clamp(.78rem,3.5vw,.95rem)}.brand h1 small{display:none}.pumps{grid-template-columns:1fr}}
+#themeBtn{min-width:44px}
+@media (pointer:coarse){.btn,.lang button{min-height:44px}.chk{min-height:44px}.rm{min-width:44px;min-height:44px}.lang button{padding-left:12px;padding-right:12px}}
+@media (max-width:360px){.times{grid-template-columns:minmax(0,1fr)}.tcol,.tcol:last-child{grid-column:auto;border-right:0;border-bottom:1px solid var(--line)}.tcol:last-child{border-bottom:0}.f{padding-left:10px;padding-right:10px}.pg{max-width:100%}}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 
 
@@ -222,6 +228,7 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
 .hist .tag{text-decoration:none}
 .hub h3.grp{font:700 .95rem var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
 .hub h2+h3.grp{margin-top:6px}
+.grpnote{margin:-4px 0 8px;color:var(--muted);font-size:.84rem}
 .fcard.internal{border-left-color:#0b3d6e}
 :root[data-theme="dark"] .fcard.internal{border-left-color:#5db4ff}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fcard.internal{border-left-color:#5db4ff}}
@@ -229,7 +236,7 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
 .histbox{background:var(--paper);border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .hubtools{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .adminlink{margin:14px 0 0}
-.adminlink .btn{min-height:36px;padding:6px 10px;font-size:.88rem;color:var(--muted)}
+.adminlink .btn{min-height:44px;padding:8px 12px;font-size:.9rem;color:var(--muted)}
 .hubnote{color:var(--muted);font-size:.85rem;margin:10px 0 0;max-width:60ch}
 
 /* Mise en marche */
@@ -249,7 +256,7 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
 .reading .chk{padding:0 0 8px}
 .rd{display:flex;flex-direction:column;gap:2px;font-size:.72rem;font-weight:600;color:var(--muted)}
 .rd span{text-align:center}
-input.sm,.rd input,.pg input{border:1px solid transparent;background:var(--field);border-radius:6px;padding:8px 8px;min-height:42px;width:100%;color:inherit}
+input.sm,.rd input,.pg input{font-size:1rem;border:1px solid transparent;background:var(--field);border-radius:6px;padding:8px 8px;min-height:42px;width:100%;color:inherit}
 input.sm:focus,.rd input:focus,.pg input:focus{border-color:var(--blue);outline:none;background:var(--paper)}
 .pg{display:flex;align-items:center;gap:8px;max-width:200px}
 textarea{resize:vertical}
@@ -308,7 +315,7 @@ textarea{resize:vertical}
 @media (max-width:520px){.hist li{flex-wrap:wrap;row-gap:8px}.hist .meta{flex:1 1 100%}.hist .meta b{white-space:normal}.hist li .btn{flex:0 0 auto}.lgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* ---------- PRINT: reproduces the paper form ---------- */
 #print{display:none}
-@page{size:letter;margin:9mm 12mm}
+@page{size:8.5in 11in;margin:0}      /* FORMAT LETTRE uniquement (8,5 × 11 po) */   /* les marges sont portées par la feuille elle-même (#print) : le réglage « Marges » de la boîte d'impression ne peut plus les supprimer */
 /* ---------- mise en page des documents imprimés / PDF (appliquée aussi hors impression pour la génération du PDF) ---------- */
 .p-head{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
 .p-head img{height:64px;width:auto;flex:none}
@@ -420,7 +427,13 @@ table.r-tbl td{vertical-align:middle}
 .r-simg{height:52px;display:flex;align-items:flex-end;justify-content:center;border-bottom:1px solid #000}
 .r-simg img{max-height:50px;max-width:70%}
 .r-sline{font-size:8.5pt;margin-top:2px}
-.i-page{height:950px;display:flex;flex-direction:column;font-family:"Times New Roman",Times,serif}
+.p-wrap{width:100%;border-collapse:collapse;border-spacing:0}
+.p-wrap>thead>tr>td,.p-wrap>tbody>tr>td,.p-wrap>tfoot>tr>td{padding:0;border:0}
+.p-sp{height:9mm}
+/* La feuille épouse la hauteur de la page (100vh en impression = zone imprimable) : la date et l'heure sont tout en bas, sans jamais déborder
+   sur une 2e page, même si le navigateur ou l'imprimante impose des marges. Les deux premières lignes sont des replis pour les anciens navigateurs. */
+.i-page{height:880px;height:calc(100vh - 18mm - 6px);height:min(985px,calc(100vh - 18mm - 6px));overflow:hidden;break-inside:avoid;page-break-after:avoid;display:flex;flex-direction:column;font-family:"Times New Roman",Times,serif}
+#print.capture .i-page{height:985px}      /* PDF créé par l'app : la zone utile fait 988 px, la fenêtre de l'écran n'a aucun rapport */
 .i-logo{height:76px;width:auto;align-self:flex-start}
 .i-lines{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;text-align:center;padding:0 8px}
 .i-line{color:#111;line-height:1.15;overflow-wrap:anywhere}
@@ -435,6 +448,7 @@ table.r-tbl td{vertical-align:middle}
   :root{padding:0}
   body{background:#fff;color:#000;font:9.5pt/1.3 Arial,Helvetica,sans-serif}
   .top,.actions,main,dialog,.toast{display:none!important}
-  #print{display:block}
+  #print{display:block;padding:9mm 12mm;box-sizing:border-box}
+  #print.multi{padding:0 12mm}
   #print *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }

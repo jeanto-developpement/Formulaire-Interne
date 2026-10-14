@@ -266,12 +266,12 @@ function showHome() {
   const row = r => `<li>
       <div class="meta"><b>${esc(FORMS[r.type].label(r) || L("Sans client", "No customer"))}</b>
       <span>${esc(FORMS[r.type].title)} · ${esc(r.date || "")}${(r.type === "req" ? (r.sigTechName || r.tech) : r.tech) ? " · " + esc(r.type === "req" ? (r.sigTechName || r.tech) : r.tech) : ""}</span>
-      ${Cloud.configured() ? (needsSync(r) ? `<span class="tag warn">☁ ${L("à synchroniser", "to sync")}</span>` : `<a class="tag" href="${esc(r.drive.url || "#")}" target="_blank" rel="noopener">☁ Drive</a>`) : ""}
+      ${Cloud.configured() && Flo.storesOnDrive(r.type) ? (needsSync(r) ? `<span class="tag warn">☁ ${L("à synchroniser", "to sync")}</span>` : `<a class="tag" href="${esc((r.drive && r.drive.url) || "#")}" target="_blank" rel="noopener">☁ Drive</a>`) : ""}
       ${isSent(r) ? `<span class="tag">✓ ${[r.printedAt && L("Imprimé", "Printed"), r.emailedAt && L("Courriel", "Emailed")].filter(Boolean).join(" · ")}</span>`
                   : `<span class="tag warn">${L("À imprimer ou envoyer", "To print or email")}</span>`}</div>
       <a class="btn" href="#/${r.type}/${r.id}">${L("Ouvrir", "Open")}</a></li>`;
   const list = reportsSorted();
-  const newForms = GROUPS.map(g => `<h3 class="grp">${esc(g.title)}</h3>
+  const newForms = GROUPS.map(g => `<h3 class="grp">${esc(g.title)}</h3>${g.id === "internal" ? `<p class="grpnote">${L("Non enregistrés sur Google Drive : envoi par courriel ou impression seulement.", "Not saved to Google Drive: email or print only.")}</p>` : ""}
     <div class="cards">${Object.entries(FORMS).filter(([, d]) => d.group === g.id).map(card).join("")}</div>`).join("");
   const saved = list.length
     ? GROUPS.map(g => {
@@ -350,7 +350,7 @@ $$("[data-lang]").forEach(b => b.addEventListener("click", () => setLang(b.datas
 
 /* ---------- Google Drive : synchronisation ---------- */
 let syncing = false, resyncAgain = false;
-const needsSync = r => !r.drive || r.drive.key !== contentKey(r);
+const needsSync = r => Flo.storesOnDrive(r.type) && (!r.drive || r.drive.key !== contentKey(r));      // formulaires internes : jamais sur Drive
 
 function applyDrive(id, info) {
   const list = store.get(REPORTS, []), i = list.findIndex(r => r.id === id);
@@ -382,6 +382,7 @@ async function syncAll(opts) {
 async function driveAfterSave() {
   if (!Cloud.configured() || !Cloud.cfg().auto || !cur) return;
   if (syncing) { resyncAgain = true; return; }                      // une synchronisation est en cours : on repassera juste après
+  if (!Flo.storesOnDrive(cur.type)) return;                       // formulaire interne : pas de copie sur Drive
   const r = store.get(REPORTS, []).find(x => x.id === cur.state.id); if (!r) return;
   syncing = true; setStatus(L("Drive : envoi…", "Drive: uploading…"));
   try { await syncOne(r); setStatus(L("Enregistré · Drive ✓", "Saved · Drive ✓")); toast(L("Enregistré sur Drive.", "Saved to Drive.")); }
@@ -451,13 +452,51 @@ function buildPrint() {
   holder.innerHTML = cur.def.print(cur.state);
   // document de plus d'une page : l'horodatage + la version figurent aussi en haut de la page 1 (le pied de page est sur la dernière)
   const P = cur.def.landscape ? { w: 965, h: 748 } : { w: 725, h: 988 };
-  holder.classList.add("capture"); holder.style.width = P.w + "px";
+  holder.classList.add("capture"); holder.style.width = P.w + "px"; holder.style.padding = "0";      // mesure du contenu seul (sans les marges de la feuille)
   const tall = holder.scrollHeight > P.h + 1;
-  holder.classList.remove("capture"); holder.style.width = "";
+  holder.classList.remove("capture"); holder.style.width = ""; holder.style.padding = "";
   if (tall && !cur.def.ownStamp) holder.insertAdjacentHTML("afterbegin", `<div class="p-stamp">${esc(Flo.stampText(cur.type, cur.state))}</div>`);
-  $("#pageStyle").textContent = cur.def.landscape ? "@page{size:letter landscape;margin:9mm 12mm}" : "";
+  // plusieurs pages : un espaceur (thead / tfoot) se répète en haut et en bas de CHAQUE page pour garder les marges, quel que soit le réglage du navigateur
+  holder.classList.toggle("multi", tall);
+  if (tall) holder.innerHTML = `<table class="p-wrap"><thead><tr><td><div class="p-sp"></div></td></tr></thead><tfoot><tr><td><div class="p-sp"></div></td></tr></tfoot><tbody><tr><td>${holder.innerHTML}</td></tr></tbody></table>`;
+  $("#pageStyle").textContent = cur.def.landscape ? "@page{size:11in 8.5in;margin:0}" : "";
 }
-$("#printBtn").addEventListener("click", () => { if (!validateForm()) return; buildPrint(); setTimeout(() => window.print(), 80); });
+/* FORMAT LETTRE uniquement.
+   Chrome / Edge / Firefox respectent @page « 8,5 × 11 po ». Safari (iPhone / iPad) l'ignore et peut imprimer en A4 : sur ces appareils,
+   « Imprimer / PDF » crée le PDF Lettre avec l'app (même moteur que le courriel et Drive) puis le partage / le télécharge. */
+const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const pdfPrint = () => { const m = Cloud.cfg().printMode; return m === "pdf" || (m !== "browser" && isIOS()); };
+
+async function printLetterPdf() {
+  const def = cur.def, state = JSON.parse(JSON.stringify(cur.state)), type = cur.type;
+  markSent("printedAt");
+  setStatus(L("Création du PDF (format Lettre)…", "Creating the PDF (Letter size)…"));
+  const { base64, pages } = await Cloud.makePdf(def, state);
+  setStatus(L("PDF créé", "PDF created"));
+  const bytes = Uint8Array.from(atob(base64), ch => ch.charCodeAt(0)), name = Cloud.fileBase(type, state) + ".pdf";
+  const blob = new Blob([bytes], { type: "application/pdf" }), file = new File([blob], name, { type: "application/pdf" }), url = URL.createObjectURL(blob);
+  let choice = "alt";
+  if (isIOS()) {                       // iOS : l'envoi / l'ouverture exige un NOUVEAU geste de l'utilisateur (le calcul a pris du temps)
+    choice = await ask(L(`PDF prêt (format Lettre, ${pages} page${pages > 1 ? "s" : ""}).`, `PDF ready (Letter size, ${pages} page${pages > 1 ? "s" : ""}).`),
+      L("Partager / imprimer", "Share / print"), L("Télécharger", "Download"), true);
+    if (!choice) { URL.revokeObjectURL(url); return; }
+  }
+  if (choice === true && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: def.title }); URL.revokeObjectURL(url); return; }
+    catch (e) { if (e && e.name === "AbortError") { URL.revokeObjectURL(url); return; } }          // autre erreur : on télécharge
+  }
+  const link = document.createElement("a"); link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+$("#printBtn").addEventListener("click", async () => {
+  if (!validateForm()) return;
+  if (pdfPrint()) {
+    try { await printLetterPdf(); return; }
+    catch (e) { toast(L("PDF Lettre impossible (", "Letter PDF not possible (") + (e && e.message || e) + L(") : impression du navigateur.", "): using the browser print instead.")); }
+  }
+  buildPrint(); setTimeout(() => window.print(), 80);
+});
 window.addEventListener("beforeprint", buildPrint);
 
 /* courriel : avec Google configuré → envoi par le script (PDF joint + copie sur Drive) ; sinon ouvre un courriel adressé au client (PDF à joindre à la main) */
@@ -469,13 +508,13 @@ $("#emailBtn").addEventListener("click", async () => {
     `Bonjour,\n\nVeuillez trouver ci-joint le document « ${def.title} »${lab ? " (" + lab + ")" : ""}${s.date ? " du " + s.date : ""}.\n\nCordialement,\n${s.sigTechName || s.tech || ""}\nFlo-Fab Inc.\n(450) 621-2995`,
     `Hello,\n\nPlease find attached the document "${def.title}"${lab ? " (" + lab + ")" : ""}${s.date ? " dated " + s.date : ""}.\n\nBest regards,\n${s.sigTechName || s.tech || ""}\nFlo-Fab Inc.\n(450) 621-2995`);
   if (Cloud.configured()) {
-    const sentTo = await Cloud.mailDialog({ to: (s.email || "").trim(), subject, body }, async mail => {
+    const sentTo = await Cloud.mailDialog({ to: (s.email || "").trim(), subject, body, stores: Flo.storesOnDrive(cur.type) }, async mail => {
       const snapshot = JSON.parse(JSON.stringify(cur.state));
       const { info } = await Cloud.send(snapshot, mail);
-      info.key = contentKey(snapshot); cur.state.drive = info;
+      if (info) { info.key = contentKey(snapshot); cur.state.drive = info; }          // info = null pour un formulaire interne (rien sur Drive)
       Cloud.saveCfg({ lastTo: mail.to.split(",")[0] });
       markSent("emailedAt");
-      setStatus(L("Courriel envoyé · Drive ✓", "Email sent · Drive ✓"));
+      setStatus(info ? L("Courriel envoyé · Drive ✓", "Email sent · Drive ✓") : L("Courriel envoyé", "Email sent"));
       toast(L("Courriel envoyé à ", "Email sent to ") + mail.to.split(",").join(", "));
     });
     return sentTo;

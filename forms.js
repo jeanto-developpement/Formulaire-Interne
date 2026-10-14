@@ -893,7 +893,11 @@ function identPrint(s) {
   // la taille du texte s'adapte à la longueur pour que tout tienne en largeur
   const line = (val, placeholder) => {
     const t = String(val || "").trim(), txt = t || placeholder;
-    const fs = Math.round(Math.max(24, Math.min(80, 1050 / Math.max(1, txt.length))));
+    // taille calculée d'après la largeur réelle du texte (Times New Roman), pour que tout tienne sur une ligne
+    const cx = identPrint.cx || (identPrint.cx = document.createElement("canvas").getContext("2d"));
+    cx.font = '100px "Times New Roman", Times, serif';
+    const w1 = Math.max(0.01, cx.measureText(txt).width / 100);            // largeur du texte à 1 px
+    const fs = Math.floor(Math.max(14, Math.min(80, 500 / w1)));           // 500 pt de large disponibles (≈ 670 px)
     return `<div class="i-line${t ? "" : " ph"}" style="font-size:${fs}pt">${v(txt)}</div>`;
   };
   return `<div class="i-page">
@@ -913,7 +917,7 @@ const VERSIONS = {
   est:     ["1.0", "2026-10-03"],
   req:     ["1.0", "2026-10-03"],
   vfd:     ["1.0", "2026-10-03"],
-  ident:   ["1.0", "2026-10-03"]
+  ident:   ["1.1", "2026-10-08"]
 };
 
 /* ---------- registre ---------- */
@@ -993,5 +997,8 @@ function contentKey(s) {
   return JSON.stringify(o);
 }
 
-window.Flo = { FORMS, esc, times, fmt, L, contentKey, stampText, stampNow, verLabel, setLang: l => { LANG = l === "en" ? "en" : "fr"; }, getLang: () => LANG };
+/* formulaires internes : jamais rangés sur Google Drive (courriel ou impression seulement) */
+const storesOnDrive = t => !!FORMS[t] && FORMS[t].group !== "internal";
+
+window.Flo = { FORMS, esc, times, fmt, L, contentKey, stampText, stampNow, verLabel, storesOnDrive, setLang: l => { LANG = l === "en" ? "en" : "fr"; }, getLang: () => LANG };
 })();

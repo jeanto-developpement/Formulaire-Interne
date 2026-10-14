@@ -22,7 +22,7 @@ Communs aux trois : heures bureau/client avec calcul automatique, nom et signatu
 ## Google : courriel avec PDF joint + enregistrement sur Drive
 Optionnel. Un petit script Google (`google-apps-script/Code.gs`, à déployer une fois) permet :
 - **Courriel** : envoi direct avec le PDF en pièce jointe (fenêtre destinataire / Cc / objet / message) ;
-- **Enregistrer** : copie automatique de chaque rapport (PDF + données) sur Google Drive, classée par type de formulaire ;
+- **Enregistrer** : copie automatique des rapports **destinés aux clients** (service, mises en marche) sur Google Drive, classée par type de formulaire. **Les formulaires internes ne sont jamais envoyés sur Drive** : courriel ou impression seulement ;
 - reprise automatique après une coupure de réseau (rapports « à synchroniser »).
 **Configuration centralisée** : URL du script et jeton dans `config.js` (GitHub), mot de passe admin / dossier Drive / plafonds dans la console Google Apps Script — **rien à saisir sur les appareils**.
 **Console admin** (🔒, bas de l'accueil, mot de passe vérifié par le script) : suppression / export / import des rapports enregistrés, test de la connexion. Les techniciens n'y ont pas accès.
@@ -32,6 +32,18 @@ Mise en place pas à pas : **[GOOGLE_SETUP.md](GOOGLE_SETUP.md)**. Sans configur
 Chaque PDF porte, en pied de page : **le formulaire, sa version (et sa date de révision), la date et l'heure d'impression, la référence du rapport**. Les PDF créés par l'app (courriel / Drive) l'ont en vrai texte sur **chaque page** (avec « Page n/N ») et dans les propriétés du fichier. À l'impression par le navigateur, le pied de page est en fin de document, et l'horodatage s'ajoute aussi en haut de la page 1 quand le document dépasse une page. La Feuille d'identification job garde sa ligne « Date et heure d'impression » et y ajoute la version.
 
 **Changer la version d'un formulaire** (à chaque modification de ses champs, libellés ou mise en page) : dans `forms.js`, tableau `VERSIONS` — par exemple `service: ["1.1", "2026-11-15"]` — puis augmenter le numéro dans `sw.js`. La version est aussi enregistrée dans les données envoyées sur Drive (`formVersion`).
+
+## Format Lettre uniquement
+Tous les PDF sont au **format Lettre (8,5 × 11 po)** — portrait, sauf la réquisition d'achat en paysage Lettre. Jamais de A4.
+- **PC / Mac** : la page d'impression déclare le format Lettre ; le navigateur l'applique.
+- **iPhone / iPad** : Safari ignore le format de page demandé. Le bouton **Imprimer / PDF** y crée donc lui-même le PDF Lettre (comme pour le courriel et Drive), puis ouvre la feuille de partage (Imprimer, Enregistrer dans Fichiers, AirDrop…) ou télécharge le fichier.
+- **Réglage** dans `config.js` : `printMode: "auto"` (défaut : navigateur sur PC / Mac, PDF créé par l'app sur iPhone / iPad), `"browser"` (toujours la boîte d'impression) ou `"pdf"` (toujours un PDF Lettre créé par l'app, partout). Si le PDF ne peut pas être créé, l'app retombe sur l'impression du navigateur et l'indique.
+- Un PDF créé par l'app est une image haute résolution de la page (texte non sélectionnable) ; l'impression du navigateur garde le texte sélectionnable.
+
+## PC, iPad et iPhone
+- **Marges d'impression** : la feuille porte elle-même ses marges (12 mm à gauche et à droite, 9 mm en haut et en bas, sur chaque page). Le réglage « Marges » de la boîte d'impression du navigateur (Aucune, Minimum…) ne peut donc plus les supprimer. Conseil : désactiver « En-têtes et pieds de page » du navigateur, car l'app imprime déjà son propre pied de page.
+- **iPhone / iPad** : tous les champs font au moins 16 px (Safari ne zoome plus la page quand on touche un champ), les zones tactiles font 44 px, rien ne déborde même sur un iPhone SE (320 px). Les PDF de l'app (courriel / Drive) sont dessinés **une page à la fois**, avec de petites images, pour respecter la limite de mémoire de Safari sur les longs documents.
+- Imprimer depuis un iPhone / iPad : bouton **Imprimer / PDF** → menu de partage → « Enregistrer dans Fichiers » ou AirPrint. Le bouton **Courriel** (avec Google configuré) joint le PDF automatiquement et fonctionne partout.
 
 ## Fonctions
 - **Langue : français / anglais** — bouton **FR | EN** dans l'en-tête. Il change l'écran *et* le PDF imprimé (français par défaut ; le choix est mémorisé sur l'appareil).
@@ -60,7 +72,7 @@ Chaque PDF porte, en pied de page : **le formulaire, sa version (et sa date de r
 - `sw.js`, `manifest.json`, icônes — mode hors ligne et installation
 
 ## Mise à jour
-Après toute modification, changer le numéro de version dans `sw.js` (ex. `flofab-v50` → `flofab-v51`) pour forcer le rafraîchissement sur les appareils.
+Après toute modification, changer le numéro de version dans `sw.js` (ex. `flofab-v56` → `flofab-v57`) pour forcer le rafraîchissement sur les appareils.
 
 ## Confidentialité
 Aucune donnée n'est envoyée à un serveur. Tout est stocké dans le navigateur (localStorage). Effacer les données du navigateur supprime les rapports : exportez-les régulièrement.
