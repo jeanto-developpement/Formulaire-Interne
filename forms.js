@@ -943,14 +943,14 @@ const PUMP_INS = [                       // registre des instruments : [fabrican
   ["WIKA S-20", "PT-2025-0144A", "2025-11-04", "2026-11-04", "±0,50% of Span"],
   ["WIKA S-20", "PT-2025-0144B", "2025-11-04", "2026-11-04", "±0,50% of Span"],
   ["Monarch Instrument", "TACH-2026-03B", "2026-03-22", "2027-03-22", "±0,01% of Reading"],
-  ["Fluke 435-II", "PQA-2025-887C", "2026-08-19", "2027-08-19", "±0,50% of Reading"]
+  ["Fluke 435-II", "PQA-2025-887C", "2027-08-19", "2028-08-19", "±0,50% of Reading"]
 ];
 const PUMP_STEPS = [[0.52, 0], [-1.64, 0], [-3.81, 0.1], [-5.97, 0.5], [-7.27, 1.8], [-8.14, 4.2], [-9.43, 8.5]];   // essai NPSH : [P1 psig, chute visée %]
 // dates d'étalonnage / d'échéance : modifiables dans le formulaire ; vides = valeurs du registre ci-dessus
 const insDate = (s, i, j) => (s && s[`ins${i + 1}_${j === 2 ? "cal" : "due"}`]) || PUMP_INS[i][j];
 const REVS = [["1", "2021-02-11", "Initial issue.", "M. Paquette"], ["2", "2025-10-20", "Corrected Grade 2B", "M.To"],
-  ["3", "2026-09-14", "Conversion en formulaire de l'application Flo-Fab (calculs automatiques, graphiques, PDF).", "—"],
-  ["3.5", "2026-09-15", "PDF toujours bilingue français / anglais (feuille imprimée, PDF du courriel et de Drive).", "—"]];
+  ["3", "2026-08-14", "Conversion en formulaire de l'application Flo-Fab (calculs automatiques, graphiques, PDF).", "—"],
+  ["3.5", "2026-08-15", "PDF toujours bilingue français / anglais (feuille imprimée, PDF du courriel et de Drive).", "—"]];
 
 /* ----- calculs (mêmes formules que la feuille Excel) ----- */
 function pumpCalc(s) {
@@ -1327,7 +1327,7 @@ const VERSIONS = {
   req:     ["1.0", "2026-10-03"],
   vfd:     ["1.0", "2026-10-03"],
   ident:   ["1.1", "2026-10-08"],
-  pump:    ["3.5", "2026-10-15"]
+  pump:    ["3.5", "2026-08-15"]
 };
 
 /* ---------- registre ---------- */

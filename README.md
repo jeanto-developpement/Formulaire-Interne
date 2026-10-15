@@ -73,7 +73,7 @@ Tous les PDF sont au **format Lettre (8,5 × 11 po)** — portrait, sauf la réq
 - `sw.js`, `manifest.json`, icônes — mode hors ligne et installation
 
 ## Mise à jour
-Après toute modification, changer le numéro de version dans `sw.js` (ex. `flofab-v71` → `flofab-v72`) pour forcer le rafraîchissement sur les appareils.
+Après toute modification, changer le numéro de version dans `sw.js` (ex. `flofab-v73` → `flofab-v74`) pour forcer le rafraîchissement sur les appareils.
 
 ## Confidentialité
 Aucune donnée n'est envoyée à un serveur. Tout est stocké dans le navigateur (localStorage). Effacer les données du navigateur supprime les rapports : exportez-les régulièrement.
