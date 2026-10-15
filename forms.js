@@ -949,8 +949,8 @@ const PUMP_STEPS = [[0.52, 0], [-1.64, 0], [-3.81, 0.1], [-5.97, 0.5], [-7.27, 1
 // dates d'étalonnage / d'échéance : modifiables dans le formulaire ; vides = valeurs du registre ci-dessus
 const insDate = (s, i, j) => (s && s[`ins${i + 1}_${j === 2 ? "cal" : "due"}`]) || PUMP_INS[i][j];
 const REVS = [["1", "2021-02-11", "Initial issue.", "M. Paquette"], ["2", "2025-10-20", "Corrected Grade 2B", "M.To"],
-  ["3", "2026-10-14", "Conversion en formulaire de l'application Flo-Fab (calculs automatiques, graphiques, PDF).", "—"],
-  ["3.5", "2026-10-15", "PDF toujours bilingue français / anglais (feuille imprimée, PDF du courriel et de Drive).", "—"]];
+  ["3", "2026-09-14", "Conversion en formulaire de l'application Flo-Fab (calculs automatiques, graphiques, PDF).", "—"],
+  ["3.5", "2026-09-15", "PDF toujours bilingue français / anglais (feuille imprimée, PDF du courriel et de Drive).", "—"]];
 
 /* ----- calculs (mêmes formules que la feuille Excel) ----- */
 function pumpCalc(s) {
