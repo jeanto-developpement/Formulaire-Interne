@@ -149,16 +149,23 @@ async function makePdf(def, state) {
     // pied de page en vrai texte (cherchable) sur chaque page : formulaire, version, date et heure, page n/N
     const total_ = edges.length - 1, pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
     const ascii = t => String(t).replace(/—/g, "-").replace(/[^\x20-\xff]/g, "");
-    const left = ascii(`Flo-Fab Inc. · ${def.title} · ${Flo.verLabel(def.id)} · ${L("Réf.", "Ref.")} ${state.id || ""}`);
+    const inLang = fn => def.bilingualPdf ? Flo.bilingual(fn) : fn();               // Test de pompe : pied de page FR / EN
+    const left = inLang(() => ascii(`Flo-Fab Inc. · ${def.title} · ${Flo.verLabel(def.id)} · ${L("Réf.", "Ref.")} ${state.id || ""}`));
+    const printedLbl = inLang(() => L("Imprimé le", "Printed"));
     const stamp = Flo.stampNow();
     if (!def.ownStamp) for (let i = 1; i <= total_; i++) {
       pdf.setPage(i); pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(90, 90, 90);
-      pdf.text(left, MARGIN_X, ph - 13);
-      pdf.text(ascii(`${L("Imprimé le", "Printed")} ${stamp} · Page ${i}/${total_}`), pw - MARGIN_X, ph - 13, { align: "right" });
+      if (def.bilingualPdf) {                                                        // texte plus long : deux lignes
+        pdf.text(left, MARGIN_X, ph - 17);
+        pdf.text(ascii(`${printedLbl} ${stamp} · Page ${i}/${total_}`), pw - MARGIN_X, ph - 9, { align: "right" });
+      } else {
+        pdf.text(left, MARGIN_X, ph - 13);
+        pdf.text(ascii(`${printedLbl} ${stamp} · Page ${i}/${total_}`), pw - MARGIN_X, ph - 13, { align: "right" });
+      }
     }
     const plain = t => String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/—/g, "-");   // les propriétés PDF n'acceptent pas bien les accents
     pdf.setProperties({
-      title: plain(`${def.title} - ${Flo.verLabel(def.id)}`), subject: plain(`${Flo.verLabel(def.id)} - ${stamp}`), author: "Flo-Fab Inc.",
+      title: plain(inLang(() => `${def.title} - ${Flo.verLabel(def.id)}`)), subject: plain(inLang(() => `${Flo.verLabel(def.id)} - ${stamp}`)), author: "Flo-Fab Inc.",
       keywords: plain(`formVersion:${def.version}; type:${def.id}; ref:${state.id || ""}; printed:${stamp}`), creator: "Formulaires Flo-Fab"
     });
     return { base64: pdf.output("datauristring").split(",")[1], pages: edges.length - 1 };

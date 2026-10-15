@@ -461,7 +461,7 @@ function buildPrint() {
   holder.classList.add("capture"); holder.style.width = P.w + "px"; holder.style.padding = "0";      // mesure du contenu seul (sans les marges de la feuille)
   const tall = holder.scrollHeight > P.h + 1;
   holder.classList.remove("capture"); holder.style.width = ""; holder.style.padding = "";
-  if (tall && !cur.def.ownStamp) holder.insertAdjacentHTML("afterbegin", `<div class="p-stamp">${esc(Flo.stampText(cur.type, cur.state))}</div>`);
+  if (tall && !cur.def.ownStamp) holder.insertAdjacentHTML("afterbegin", `<div class="p-stamp">${esc(cur.def.bilingualPdf ? Flo.bilingual(() => Flo.stampText(cur.type, cur.state)) : Flo.stampText(cur.type, cur.state))}</div>`);
   // plusieurs pages : un espaceur (thead / tfoot) se répète en haut et en bas de CHAQUE page pour garder les marges, quel que soit le réglage du navigateur
   holder.classList.toggle("multi", tall);
   if (tall) holder.innerHTML = `<table class="p-wrap"><thead><tr><td><div class="p-sp"></div></td></tr></thead><tfoot><tr><td><div class="p-sp"></div></td></tr></tfoot><tbody><tr><td>${holder.innerHTML}</td></tr></tbody></table>`;

@@ -507,6 +507,9 @@ table.r-tbl td{vertical-align:middle}
 table.t-tbl{table-layout:fixed;width:100%;font-size:8pt}
 table.t-tbl th{background:#dcebfa!important;text-align:center;padding:2px 3px;line-height:1.15}
 table.t-tbl td{height:17px;padding:1px 4px;overflow:hidden;line-height:1.2}
+table.t-kv td{height:18px}
+table.t-kv td.k{background:#f2f6fb!important;color:#333;font-size:7.5pt}
+table.t-kv .u{color:#555;font-size:7.5pt}
 table.t-tbl td.n{text-align:right;font-variant-numeric:tabular-nums}
 table.t-tbl td.ctr{text-align:center}
 table.t-tbl td.ok{background:#c6efce!important;color:#006100;font-weight:700}
