@@ -488,7 +488,21 @@ table.r-tbl td{vertical-align:middle}
 /* La feuille épouse la hauteur de la page (100vh en impression = zone imprimable) : la date et l'heure sont tout en bas, sans jamais déborder
    sur une 2e page, même si le navigateur ou l'imprimante impose des marges. Les deux premières lignes sont des replis pour les anciens navigateurs. */
 .i-page{height:880px;height:calc(100vh - 18mm - 6px);height:min(985px,calc(100vh - 18mm - 6px));overflow:hidden;break-inside:avoid;page-break-after:avoid;display:flex;flex-direction:column;font-family:"Times New Roman",Times,serif}
-#print.capture .i-page{height:985px}      /* PDF créé par l'app : la zone utile fait 988 px, la fenêtre de l'écran n'a aucun rapport */
+#print.capture .i-page{height:985px}
+/* feuille de contrôle : grandes lettres grasses, centrées ; même hauteur adaptative que la feuille d'identification */
+.ckl .chk{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);font-size:1.08rem;font-weight:600;min-height:52px;margin:0}
+.ckl .chk:first-child{border-top:0}
+.ckl .chk input{width:24px;height:24px}
+.c-page{height:880px;height:calc(100vh - 18mm - 6px);height:min(985px,calc(100vh - 18mm - 6px));overflow:hidden;break-inside:avoid;page-break-after:avoid;display:flex;flex-direction:column;font-family:"Arial Black",Arial,Helvetica,sans-serif;font-weight:900;color:#111}
+#print.capture .c-page{height:985px}
+.c-lines{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;text-align:center}
+.c-client,.c-l2,.c-l3{line-height:1.1;overflow-wrap:anywhere;letter-spacing:.01em}
+.c-page .ph{color:#b5b5b5}
+.c-list{display:grid;grid-template-columns:auto auto auto;column-gap:22px;justify-content:center;align-items:center;line-height:1}
+.c-lab{text-align:left}
+.c-init{display:inline-flex;align-items:flex-end;gap:6px;font:400 9pt Arial,Helvetica,sans-serif;color:#444;align-self:end;padding-bottom:.08em}
+.c-init i{display:inline-block;width:110px;border-bottom:1.6px solid #111;height:1px}
+.c-box{display:inline-block;width:.72em;height:.72em;border:4px solid #111;box-sizing:border-box}      /* PDF créé par l'app : la zone utile fait 988 px, la fenêtre de l'écran n'a aucun rapport */
 .i-logo{height:76px;width:auto;align-self:flex-start}
 .i-lines{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;text-align:center;padding:0 8px}
 .i-line{color:#111;line-height:1.15;overflow-wrap:anywhere}

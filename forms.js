@@ -1149,7 +1149,7 @@ function pumpHtml(p) {
   return sec(L("ESSAI DE PERFORMANCE DE POMPE — GRADE 2B (ANSI/HI 14.6)", "PUMP PERFORMANCE TEST — GRADE 2B (ANSI/HI 14.6)"), `
     <p class="mintro" style="padding:10px 14px 0;margin:0">${L("Pompes rotodynamiques : essai de réception de performance hydraulique, avec registres de métrologie et de moteur. Unités US (GPM, ft, psi, HP). Confirmez l'édition / l'année de la norme HI 14.6 applicable au contrat.", "Rotodynamic pumps: hydraulic performance acceptance test with metrology and motor registries. US customary units (GPM, ft, psi, HP). Confirm the ANSI/HI 14.6 edition/year that applies to the contract.")}</p>
     <div class="grid2">
-      ${fld(p, "project", L("Nom du projet", "Project name"))}${fld(p, "date", L("Date de l'essai", "Test date"), { type: "date" })}
+      ${fld(p, "job", L("# Job", "# Job"))}${fld(p, "project", L("Nom du projet", "Project name"))}${fld(p, "date", L("Date de l'essai", "Test date"), { type: "date" })}
       ${fld(p, "inspector", L("Inspecteur / ingénieur", "Inspector / engineer"))}${fld(p, "facility", L("Installation / lieu", "Facility / location"))}
     </div>`) +
   sec(L("INFORMATIONS SUR LA POMPE", "PUMP INFORMATION"), `<div class="grid2">
@@ -1269,7 +1269,7 @@ function pumpPrint(s) {
     <div class="p-addr">860 boul. Industriel<br>Bois-des-Filion, QC<br>Canada, J6Z 4V7<br>Tel : (450) 621-2995<br>Fax : (450) 621-4995</div></div>
   <div class="avoid"><div class="e-bar"><span>${L("FEUILLE D'ESSAI DE PERFORMANCE DE POMPE", "PUMP PERFORMANCE TEST SHEET")}</span><b>GRADE 2B</b><span>ANSI/HI 14.6</span></div>
     <div class="t-note">${L("Pompes rotodynamiques : essais de réception de performance hydraulique — avec registres de métrologie et de moteur (unités US).", "Rotodynamic pumps: hydraulic performance acceptance tests — with metrology and motor registries (US customary units).")} ${L("Édition / année ANSI/HI 14.6 :", "ANSI/HI 14.6 edition/year:")} <span class="t-blank"></span></div></div>
-  ${sec(L("PROJET ET IDENTIFICATION", "PROJECT & ASSET METADATA"), kv([[L("Projet", "Project"), s.project], [L("Inspecteur / ingénieur", "Inspector / engineer"), s.inspector], [L("Date de l'essai", "Test date"), s.date], [L("Installation / lieu", "Facility / location"), s.facility]]))}
+  ${sec(L("PROJET ET IDENTIFICATION", "PROJECT & ASSET METADATA"), kv([["# Job", s.job], [L("Date de l'essai", "Test date"), s.date], [L("Projet", "Project"), s.project], [L("Inspecteur / ingénieur", "Inspector / engineer"), s.inspector], [L("Installation / lieu", "Facility / location"), s.facility]]))}
   ${sec(L("INFORMATIONS SUR LA POMPE", "PUMP INFORMATION"), kv([
       [L("Modèle", "Model"), s.model], [L("N° de série", "Serial No"), s.serial],
       [L("Vitesse nominale Nr", "Rated speed Nr"), s.Nr, "rpm"], ["SG", "1", L("(eau)", "(water)")],
@@ -1316,6 +1316,60 @@ function pumpPrint(s) {
   ${sec(L("SECTION 7 — HISTORIQUE DES RÉVISIONS DU DOCUMENT", "SECTION 7 — DOCUMENT REVISION HISTORY"), `<table class="p t-tbl"><colgroup><col style="width:7%"><col style="width:15%"><col><col style="width:18%"></colgroup><thead><tr><th>Rev</th><th>Date</th><th>Description</th><th>${L("Par", "By")}</th></tr></thead><tbody>${REVS.map(r => `<tr><td class="ctr">${r[0]}</td><td class="ctr">${r[1]}</td><td>${v(r[2])}</td><td>${v(r[3])}</td></tr>`).join("")}</tbody></table>`)}` + foot(s);
 }
 
+/* =====================================================================
+   9. FEUILLE DE CONTRÔLE (formulaire interne)
+   Grande feuille posée sur l'équipement : client, # job + bloc, puissance et unité (n/n),
+   puis la liste de contrôle Alignement / Électrique / Programmation (cases à cocher à la main ou dans l'app).
+   ===================================================================== */
+const CTRL_ITEMS = [["align", "Alignement", "Alignment"], ["elec", "Électrique", "Electrical"], ["prog", "Programmation", "Programming"],
+  ["isol", "Isolation", "Insulation"], ["fini", "Finition", "Finishing"], ["rust", "Inhibiteur de rouille", "Rust inhibitor"],
+  ["loose", "Pièces shippées lousses", "Loose-shipped parts"], ["qc", "Contrôle qualité", "Quality control"]];
+const CTRL_DEFAULT = ["align", "elec", "prog"];
+// lignes à imprimer : celles cochées dans l'app (par défaut : alignement, électrique, programmation)
+const ctrlSel = s => { const any = CTRL_ITEMS.some(([k]) => ("opt_" + k) in s); return CTRL_ITEMS.filter(([k]) => any ? !!s["opt_" + k] : CTRL_DEFAULT.includes(k)); };
+function ctrlHtml(p) {
+  return `
+  <section class="sec" aria-label="${L("Feuille de contrôle", "Control sheet")}">
+    <h2 class="bar">${L("FEUILLE DE CONTRÔLE", "CONTROL SHEET")}</h2>
+    <div class="grid2">
+      ${fld(p, "customer", L("Client", "Customer"), { auto: "organization" })}${fld(p, "job", L("# Job", "# Job"))}
+      ${fld(p, "block", L("Bloc / emplacement (ex. BLOCK 7)", "Block / location (e.g. BLOCK 7)"))}${fld(p, "hp", L("Puissance (HP)", "Power (HP)"), { mode: "decimal" })}
+      ${fld(p, "unit", L("Unité n°", "Unit no."), { mode: "numeric" })}${fld(p, "units", L("Sur (nombre d'unités)", "Of (number of units)"), { mode: "numeric" })}
+    </div>
+  </section>
+  <section class="sec" aria-label="${L("Liste de contrôle", "Checklist")}">
+    <h2 class="bar">${L("LISTE DE CONTRÔLE — LIGNES À IMPRIMER", "CHECKLIST — LINES TO PRINT")}</h2>
+    <p class="mintro" style="padding:10px 14px 0;margin:0">${L("Choisissez les lignes qui apparaîtront sur la feuille. Chacune s'imprime avec une case à cocher et une ligne pour les initiales.", "Choose the lines that will appear on the sheet. Each one prints with a box to tick and a line for initials.")}</p>
+    <div class="ckl">${CTRL_ITEMS.map(([k, fr, en]) => `<label class="chk"><input type="checkbox" data-k="opt_${k}"><span>${L(fr, en)}</span></label>`).join("")}</div>
+    <p class="mintro" style="padding:10px 14px;margin:0;border-top:1px solid var(--line)">${L(
+      "La feuille s'imprime en grand format ; les cases et les initiales se remplissent à la main sur la feuille. La date, l'heure et la version s'ajoutent au bas de la feuille.",
+      "The sheet prints in large type; boxes and initials are filled in by hand on the sheet. The date, time and version are added at the bottom of the sheet.")}</p>
+  </section>`;
+}
+function ctrlPrint(s) {
+  const stamp = stampNow();
+  // taille du nom du client calculée d'après sa largeur réelle, pour qu'il tienne sur une ligne
+  const cx = ctrlPrint.cx || (ctrlPrint.cx = document.createElement("canvas").getContext("2d"));
+  const fit = (txt, max, avail) => { cx.font = '900 100px "Arial Black", Arial, Helvetica, sans-serif'; const w1 = Math.max(0.01, cx.measureText(txt).width / 100); return Math.floor(Math.max(18, Math.min(max, avail / w1))); };
+  const client = String(s.customer || "").trim() || L("CLIENT", "CUSTOMER");
+  const l2 = [s.job, s.block].map(x => String(x || "").trim()).filter(Boolean).join("  ") || L("# JOB  BLOC", "# JOB  BLOCK");
+  const hp = String(s.hp || "").trim(), u = String(s.unit || "").trim(), n = String(s.units || "").trim();
+  const l3 = [hp ? hp + "HP" : "", u || n ? `${u || "_"}/${n || "_"}` : ""].filter(Boolean).join(" ") || "HP  _/_";
+  const ph = (val, txt) => val ? "" : " ph";
+  const items = ctrlSel(s), nI = items.length;                     // plus il y a de lignes, plus le texte est compact
+  const itemPt = nI <= 3 ? 44 : nI <= 5 ? 38 : 32, rowGap = nI <= 3 ? 34 : nI <= 5 ? 26 : 18, big = nI <= 3 ? 88 : nI <= 5 ? 80 : 72;
+  return `<div class="c-page">
+    <img class="i-logo" src="logo.svg" alt="">
+    <div class="c-lines">
+      <div class="c-client${ph(s.customer)}" style="font-size:${fit(client, big, 520)}pt">${v(client.toUpperCase())}</div>
+      <div class="c-l2${ph(s.job || s.block)}" style="font-size:${fit(l2, 34, 520)}pt">${v(l2.toUpperCase())}</div>
+      <div class="c-l3${ph(hp || u || n)}" style="font-size:${fit(l3, 48, 520)}pt">${v(l3.toUpperCase())}</div>
+      ${items.length ? `<div class="c-list" style="font-size:${itemPt}pt;row-gap:${rowGap}px">${items.map(([k, fr, en]) => `<span class="c-lab">${v(L(fr, en))}</span><span class="c-box"></span><span class="c-init"><small>${L("Init.", "Init.")}</small><i></i></span>`).join("")}</div>` : ""}
+    </div>
+    <div class="i-foot"><span>${L("Date et heure d'impression :", "Printed on:")}</span> <b>${stamp}</b> <span class="i-ver">· ${v(verLabel("ctrl"))}${s.id ? ` · ${L("Réf.", "Ref.")} ${v(s.id)}` : ""}</span></div>
+  </div>`;
+}
+
 /* ---------- versions des formulaires ----------
    À AUGMENTER à chaque modification d'un formulaire (champs, libellés, mise en page) : le numéro s'imprime sur chaque PDF.
    Format : [version, date de révision]. */
@@ -1327,7 +1381,8 @@ const VERSIONS = {
   req:     ["1.0", "2026-10-03"],
   vfd:     ["1.0", "2026-10-03"],
   ident:   ["1.1", "2026-10-08"],
-  pump:    ["3.5", "2026-08-15"]
+  pump:    ["3.5", "2026-08-15"],
+  ctrl:    ["1.1", "2026-10-16"]
 };
 
 /* ---------- registre ---------- */
@@ -1381,7 +1436,16 @@ const FORMS = {
     get desc() { return L("Essai hydraulique Grade 2B (ANSI/HI 14.6) : points d'essai, NPSH3, courbes et verdict ACCEPTÉ / REJETÉ.", "Grade 2B hydraulic test (ANSI/HI 14.6): test points, NPSH3, curves and ACCEPT / REJECT verdict."); },
     html: pumpHtml, init: pumpInit, refresh: pumpRefresh, print: pumpPrint,
     blank: () => ({ sigMfrDate: todayLocal(), sigWitDate: todayLocal(), sigTpiDate: todayLocal() }),
-    label: s => [s.project || s.facility, s.model && (s.model + (s.serial ? " / " + s.serial : ""))].filter(Boolean).join(" — ")
+    label: s => [s.project || s.facility, s.job && "Job " + s.job, s.model && (s.model + (s.serial ? " / " + s.serial : ""))].filter(Boolean).join(" — ")
+  },
+  ctrl: {
+    group: "internal", folder: "Feuilles de contrôle", fileTag: "Controle",
+    get title() { return L("Feuille de contrôle", "Control sheet"); },
+    get short() { return L("Feuille de contrôle", "Control sheet"); },
+    get desc() { return L("Grande feuille : client, # job, bloc, HP, unité, et contrôle alignement / électrique / programmation.", "Large sheet: customer, # job, block, HP, unit, and alignment / electrical / programming check."); },
+    html: ctrlHtml, print: ctrlPrint,
+    blank: () => Object.fromEntries(CTRL_ITEMS.map(([k]) => ["opt_" + k, CTRL_DEFAULT.includes(k)])),
+    label: s => [s.customer, s.job && "Job " + s.job, s.block].filter(Boolean).join(" — ")
   },
   req: {
     group: "internal", folder: "Réquisitions d'achat", fileTag: "Requisition",
@@ -1407,6 +1471,7 @@ Object.entries(FORMS).forEach(([t, d]) => {
   d.print = function (s) { PRINT_TYPE = t; try { return d.bilingualPdf ? bilingual(() => orig.call(this, s)) : orig.call(this, s); } finally { PRINT_TYPE = null; } };
 });
 FORMS.ident.ownStamp = true;
+FORMS.ctrl.ownStamp = true;                  // la feuille de contrôle a sa propre ligne date / heure / version
 FORMS.pump.bilingualPdf = true;              // le PDF du Test de pompe est toujours en français ET en anglais                   // la feuille a déjà sa propre ligne date / heure / version
 
 /* signature du contenu d'un rapport (ignore les champs de suivi) : sert à savoir s'il a changé depuis l'impression / l'envoi */

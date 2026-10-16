@@ -83,7 +83,7 @@ Limites :
 - **Mot de passe oublié** : dans la console Google Apps Script, supprimez la propriété `ADMIN_PASSWORD`, exécutez `creerAcces`, lisez le nouveau mot de passe dans le journal.
 
 ## Ce qui va sur Drive
-**Tous les formulaires sont enregistrés sur Google Drive** (Rapport de service, Mises en marche, Estimation, Réquisition d'achat, QC contrôle programmation, Test de performance de pompe), **sauf la Feuille d'identification job**, qui s'envoie seulement par courriel (PDF joint, rien n'est conservé) ou s'imprime.
+**Tous les formulaires sont enregistrés sur Google Drive** (Rapport de service, Mises en marche, Estimation, Réquisition d'achat, QC contrôle programmation, Test de performance de pompe, Feuille de contrôle), **sauf la Feuille d'identification job**, qui s'envoie seulement par courriel (PDF joint, rien n'est conservé) ou s'imprime.
 La règle est appliquée **deux fois** : par l'application, et par le script (propriété `NO_DRIVE_TYPES`, défaut `ident`), qui refuse de ranger ce type même si une version modifiée de l'application le demandait.
 *Si vous aviez créé vous-même la propriété `NO_DRIVE_TYPES` dans le script avec l'ancienne liste (`est,req,vfd,ident,pump`), remplacez-la par `ident` ou supprimez-la.*
 
@@ -106,6 +106,7 @@ Flo-Fab - Formulaires /
   Réquisitions d'achat /  …
   QC contrôle programmation /  …
   Tests de pompe /  …
+  Feuilles de contrôle /  …
 ```
 
 ## Sécurité — à lire
