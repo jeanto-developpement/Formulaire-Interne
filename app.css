@@ -490,11 +490,20 @@ table.r-tbl td{vertical-align:middle}
 .i-page{height:880px;height:calc(100vh - 18mm - 6px);height:min(985px,calc(100vh - 18mm - 6px));overflow:hidden;break-inside:avoid;page-break-after:avoid;display:flex;flex-direction:column;font-family:"Times New Roman",Times,serif}
 #print.capture .i-page{height:985px}
 /* feuille de contrôle : grandes lettres grasses, centrées ; même hauteur adaptative que la feuille d'identification */
+.qrprev{display:flex;gap:14px;align-items:center;padding:12px 14px;border-top:1px solid var(--line)}
+.qrprev svg{width:110px;height:110px;flex:none;border-radius:4px}
+.qrprev div{display:flex;flex-direction:column;gap:3px;min-width:0;font-size:.88rem}
+.qrprev a{color:var(--blue);word-break:break-all}
+.qrprev span{color:var(--muted)}
 .ckl .chk{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);font-size:1.08rem;font-weight:600;min-height:52px;margin:0}
 .ckl .chk:first-child{border-top:0}
 .ckl .chk input{width:24px;height:24px}
 .c-page{height:880px;height:calc(100vh - 18mm - 6px);height:min(985px,calc(100vh - 18mm - 6px));overflow:hidden;break-inside:avoid;page-break-after:avoid;display:flex;flex-direction:column;font-family:"Arial Black",Arial,Helvetica,sans-serif;font-weight:900;color:#111}
 #print.capture .c-page{height:985px}
+.c-head{display:flex;justify-content:space-between;align-items:flex-start}
+.c-qr{display:flex;flex-direction:column;align-items:center;gap:2px}
+.c-qr svg{width:1.35in;height:1.35in;display:block}
+.c-qr small{font:400 7pt Arial,Helvetica,sans-serif;color:#333}
 .c-lines{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;text-align:center}
 .c-client,.c-l2,.c-l3{line-height:1.1;overflow-wrap:anywhere;letter-spacing:.01em}
 .c-page .ph{color:#b5b5b5}

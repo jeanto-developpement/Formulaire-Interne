@@ -1325,6 +1325,17 @@ const CTRL_ITEMS = [["align", "Alignement", "Alignment"], ["elec", "Électrique"
   ["isol", "Isolation", "Insulation"], ["fini", "Finition", "Finishing"], ["rust", "Inhibiteur de rouille", "Rust inhibitor"],
   ["loose", "Pièces shippées lousses", "Loose-shipped parts"], ["qc", "Contrôle qualité", "Quality control"]];
 const CTRL_DEFAULT = ["align", "elec", "prog"];
+// code QR : lien vers la soumission / le job dans l'ERP
+const ctrlUrl = s => { const j = String(s.job || "").trim(); return j ? "https://dev.flofab.com/Quotes/" + encodeURIComponent(j) : ""; };
+const qrSvg = text => {
+  if (!text || typeof window.qrcode !== "function") return "";
+  try {
+    const q = window.qrcode(0, "M"); q.addData(text); q.make();
+    const n = q.getModuleCount(), m = 4; let d = "";                       // marge de 4 modules (zone de silence)
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c + m} ${r + m}h1v1h-1z`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n + 2 * m} ${n + 2 * m}" shape-rendering="crispEdges" role="img" aria-label="QR ${esc(text)}"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+  } catch (e) { return ""; }
+};
 // lignes à imprimer : celles cochées dans l'app (par défaut : alignement, électrique, programmation)
 const ctrlSel = s => { const any = CTRL_ITEMS.some(([k]) => ("opt_" + k) in s); return CTRL_ITEMS.filter(([k]) => any ? !!s["opt_" + k] : CTRL_DEFAULT.includes(k)); };
 function ctrlHtml(p) {
@@ -1336,6 +1347,7 @@ function ctrlHtml(p) {
       ${fld(p, "block", L("Bloc / emplacement (ex. BLOCK 7)", "Block / location (e.g. BLOCK 7)"))}${fld(p, "hp", L("Puissance (HP)", "Power (HP)"), { mode: "decimal" })}
       ${fld(p, "unit", L("Unité n°", "Unit no."), { mode: "numeric" })}${fld(p, "units", L("Sur (nombre d'unités)", "Of (number of units)"), { mode: "numeric" })}
     </div>
+    <div class="qrprev" data-qr></div>
   </section>
   <section class="sec" aria-label="${L("Liste de contrôle", "Checklist")}">
     <h2 class="bar">${L("LISTE DE CONTRÔLE — LIGNES À IMPRIMER", "CHECKLIST — LINES TO PRINT")}</h2>
@@ -1345,6 +1357,12 @@ function ctrlHtml(p) {
       "La feuille s'imprime en grand format ; les cases et les initiales se remplissent à la main sur la feuille. La date, l'heure et la version s'ajoutent au bas de la feuille.",
       "The sheet prints in large type; boxes and initials are filled in by hand on the sheet. The date, time and version are added at the bottom of the sheet.")}</p>
   </section>`;
+}
+function ctrlRefresh(host, s) {
+  const box = host.querySelector("[data-qr]"); if (!box) return;
+  const url = ctrlUrl(s), qr = qrSvg(url);
+  box.innerHTML = url ? `${qr}<div><b>${L("Code QR de la feuille", "Sheet QR code")}</b><a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a><span>${L("Scanner pour ouvrir le job dans l'ERP (dev.flofab.com).", "Scan to open the job in the ERP (dev.flofab.com).")}</span></div>`
+    : `<div><b>${L("Code QR de la feuille", "Sheet QR code")}</b><span>${L("Entrez le # job : le code QR (lien dev.flofab.com/Quotes/…) s'imprimera en haut à droite.", "Enter the # job: the QR code (link dev.flofab.com/Quotes/…) will print at the top right.")}</span></div>`;
 }
 function ctrlPrint(s) {
   const stamp = stampNow();
@@ -1358,8 +1376,9 @@ function ctrlPrint(s) {
   const ph = (val, txt) => val ? "" : " ph";
   const items = ctrlSel(s), nI = items.length;                     // plus il y a de lignes, plus le texte est compact
   const itemPt = nI <= 3 ? 44 : nI <= 5 ? 38 : 32, rowGap = nI <= 3 ? 34 : nI <= 5 ? 26 : 18, big = nI <= 3 ? 88 : nI <= 5 ? 80 : 72;
+  const url = ctrlUrl(s), qr = qrSvg(url);
   return `<div class="c-page">
-    <img class="i-logo" src="logo.svg" alt="">
+    <div class="c-head"><img class="i-logo" src="logo.svg" alt="">${qr ? `<div class="c-qr">${qr}<small>${v(url.replace("https://", ""))}</small></div>` : ""}</div>
     <div class="c-lines">
       <div class="c-client${ph(s.customer)}" style="font-size:${fit(client, big, 520)}pt">${v(client.toUpperCase())}</div>
       <div class="c-l2${ph(s.job || s.block)}" style="font-size:${fit(l2, 34, 520)}pt">${v(l2.toUpperCase())}</div>
@@ -1382,7 +1401,7 @@ const VERSIONS = {
   vfd:     ["1.0", "2026-10-03"],
   ident:   ["1.1", "2026-10-08"],
   pump:    ["3.5", "2026-08-15"],
-  ctrl:    ["1.1", "2026-10-16"]
+  ctrl:    ["1.2", "2026-10-16"]
 };
 
 /* ---------- registre ---------- */
@@ -1443,7 +1462,7 @@ const FORMS = {
     get title() { return L("Feuille de contrôle", "Control sheet"); },
     get short() { return L("Feuille de contrôle", "Control sheet"); },
     get desc() { return L("Grande feuille : client, # job, bloc, HP, unité, et contrôle alignement / électrique / programmation.", "Large sheet: customer, # job, block, HP, unit, and alignment / electrical / programming check."); },
-    html: ctrlHtml, print: ctrlPrint,
+    html: ctrlHtml, refresh: ctrlRefresh, print: ctrlPrint,
     blank: () => Object.fromEntries(CTRL_ITEMS.map(([k]) => ["opt_" + k, CTRL_DEFAULT.includes(k)])),
     label: s => [s.customer, s.job && "Job " + s.job, s.block].filter(Boolean).join(" — ")
   },
