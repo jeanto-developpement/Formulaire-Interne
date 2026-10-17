@@ -3626,7 +3626,12 @@ function pumpPrint(s) {
 const CTRL_ITEMS = [["assy", "Assemblage", "Assembly"], ["align", "Alignement", "Alignment"], ["elec", "Électrique", "Electrical"], ["prog", "Programmation", "Programming"],
   ["isol", "Isolation", "Insulation"], ["test", "Tester", "Testing"], ["fini", "Finition", "Finishing"], ["rust", "Inhibiteur de rouille", "Rust inhibitor"],
   ["loose", "Pièces shippées lousses", "Loose-shipped parts"], ["qc", "Contrôle qualité", "Quality control"]];
-const CTRL_DEFAULT = ["align", "elec", "prog"];
+const CTRL_DEFAULT = [];                                          // aucune présélection (sauf le contrôle qualité, obligatoire)
+const CTRL_LEGACY = ["align", "elec", "prog"];                   // anciens rapports sans sélection enregistrée : leurs 3 lignes d'origine
+// liste de la feuille des contrôles - POMPE
+const CTRL_PUMP_ITEMS = [["assy", "Assemblage", "Assembly"], ["trim", "Impeller Trimmer", "Impeller Trimmer"], ["align", "Alignement", "Alignment"],
+  ["grnd", "Shaft grounding kit", "Shaft grounding kit"], ["sleeve", "Sleeve SS", "Sleeve SS"], ["flush", "Flush Line", "Flush Line"],
+  ["base", "Base mécanique", "Mechanical base"], ["test", "Tester", "Testing"], ["drive", "Drive", "Drive"]];
 // code QR : lien vers la soumission / le job dans l'ERP
 // numéro de base du # job : le premier groupe de chiffres, avant le tiret (6 chiffres max.) — ex. 175617-16 → 175617, 64648-3 → 64648
 const quoteUrl = val => { const m = String(val || "").match(/\d+/); const q = m ? m[0].slice(0, 6) : ""; return q ? "https://dev.flofab.com/Quotes/" + q + "?t=6" : ""; };
@@ -3643,11 +3648,15 @@ const qrSvg = text => {
 };
 // lignes à imprimer : celles cochées dans l'app (par défaut : alignement, électrique, programmation)
 const CTRL_REQUIRED = ["qc"];                                       // toujours imprimée : contrôle qualité obligatoire
-const ctrlSel = s => { const any = CTRL_ITEMS.some(([k]) => ("opt_" + k) in s); return CTRL_ITEMS.filter(([k]) => CTRL_REQUIRED.includes(k) || (any ? !!s["opt_" + k] : CTRL_DEFAULT.includes(k))); };
-function ctrlHtml(p) {
+// une configuration par feuille de contrôle (même mise en page, mêmes champs, même code QR ; seule la liste change)
+const CTRL_SYS = { type: "ctrl", titleFr: "Feuille des contrôles - Système", titleEn: "Control sheet - System", items: CTRL_ITEMS, required: CTRL_REQUIRED, legacy: CTRL_LEGACY };
+const CTRL_PUMP = { type: "ctrlp", titleFr: "Feuille des contrôles - Pompe", titleEn: "Control sheet - Pump", items: CTRL_PUMP_ITEMS, required: [], legacy: [] };
+const ctrlSelG = (cfg, s) => { const any = cfg.items.some(([k]) => ("opt_" + k) in s); return cfg.items.filter(([k]) => cfg.required.includes(k) || (any ? !!s["opt_" + k] : cfg.legacy.includes(k))); };
+const ctrlBlank = cfg => Object.fromEntries(cfg.items.map(([k]) => ["opt_" + k, false]));
+function ctrlHtmlG(cfg, p) {
   return `
-  <section class="sec" aria-label="${L("Feuille des contrôles - Système", "Control sheet - System")}">
-    <h2 class="bar">${L("FEUILLE DES CONTRÔLES - SYSTÈME", "CONTROL SHEET - SYSTEM")}</h2>
+  <section class="sec" aria-label="${L(cfg.titleFr, cfg.titleEn)}">
+    <h2 class="bar">${L(cfg.titleFr.toUpperCase(), cfg.titleEn.toUpperCase())}</h2>
     <div class="grid2">
       ${fld(p, "job", L("# Job", "# Job"))}${fld(p, "customer", L("Client", "Customer"), { auto: "organization" })}
       ${fld(p, "block", L("Projet", "Project"))}
@@ -3658,7 +3667,7 @@ function ctrlHtml(p) {
   <section class="sec" aria-label="${L("Liste de contrôle", "Checklist")}">
     <h2 class="bar">${L("LISTE DE CONTRÔLE — LIGNES À IMPRIMER", "CHECKLIST — LINES TO PRINT")}</h2>
     <p class="mintro" style="padding:10px 14px 0;margin:0">${L("Choisissez les lignes qui apparaîtront sur la feuille. Chacune s'imprime avec une case à cocher et une ligne pour les initiales.", "Choose the lines that will appear on the sheet. Each one prints with a box to tick and a line for initials.")}</p>
-    <div class="ckl">${CTRL_ITEMS.map(([k, fr, en]) => CTRL_REQUIRED.includes(k)
+    <div class="ckl">${cfg.items.map(([k, fr, en]) => cfg.required.includes(k)
       ? `<label class="chk"><input type="checkbox" checked disabled><span>${L(fr, en)} <em class="req">${L("obligatoire", "required")}</em></span></label>`
       : `<label class="chk"><input type="checkbox" data-k="opt_${k}"><span>${L(fr, en)}</span></label>`).join("")}</div>
     <p class="mintro" style="padding:10px 14px;margin:0;border-top:1px solid var(--line)">${L(
@@ -3677,17 +3686,17 @@ function qrRefresh(urlFn, fieldFr, fieldEn) {
 }
 const ctrlRefresh = qrRefresh(ctrlUrl, "# job", "# job");
 const identRefresh = qrRefresh(identUrl, "#Quote", "#Quote");
-function ctrlPrint(s) {
+function ctrlPrintG(cfg, s) {
   const stamp = stampNow();
   // taille du nom du client calculée d'après sa largeur réelle, pour qu'il tienne sur une ligne
-  const cx = ctrlPrint.cx || (ctrlPrint.cx = document.createElement("canvas").getContext("2d"));
+  const cx = ctrlPrintG.cx || (ctrlPrintG.cx = document.createElement("canvas").getContext("2d"));
   const fit = (txt, max, avail) => { cx.font = '900 100px "Arial Black", Arial, Helvetica, sans-serif'; const w1 = Math.max(0.01, cx.measureText(txt).width / 100); return Math.floor(Math.max(18, Math.min(max, avail / w1))); };
   const client = String(s.customer || "").trim() || L("CLIENT", "CUSTOMER");
   const jobT = String(s.job || "").trim() || "# JOB", proj = String(s.block || "").trim() || L("PROJET", "PROJECT");
   const u = String(s.unit || "").trim(), n = String(s.units || "").trim();
   const l3 = u || n ? `${u || "_"}/${n || "_"}` : "_/_";
   const ph = (val, txt) => val ? "" : " ph";
-  const items = ctrlSel(s), nI = items.length;                     // plus il y a de lignes, plus le texte est compact
+  const items = ctrlSelG(cfg, s), nI = items.length;                     // plus il y a de lignes, plus le texte est compact
   const itemPt = nI <= 3 ? 34 : nI <= 5 ? 30 : 26, rowGap = nI <= 3 ? 34 : nI <= 5 ? 24 : 14, big = nI <= 3 ? 80 : nI <= 5 ? 72 : 64;
   const bigSz = fit(jobT, big, 520);                                         // # job : en grand
   const midMax = nI <= 5 ? 44 : 40;                                          // client, projet, unité / sur : même grosseur
@@ -3702,9 +3711,11 @@ function ctrlPrint(s) {
       <div class="c-l3${ph(u || n)}" style="font-size:${midSz}pt">${v(l3.toUpperCase())}</div>
       ${items.length ? `<div class="c-list" style="font-size:${itemPt}pt;row-gap:${rowGap}px">${items.map(([k, fr, en]) => `<span class="c-lab">${v(L(fr, en))}</span><span class="c-box"></span><span class="c-init"><small>${L("Init.", "Init.")}</small><i></i></span>`).join("")}</div>` : ""}
     </div>
-    <div class="i-foot"><span>${L("Date et heure d'impression :", "Printed on:")}</span> <b>${stamp}</b> <span class="i-ver">· ${v(verLabel("ctrl"))}${s.id ? ` · ${L("Réf.", "Ref.")} ${v(s.id)}` : ""}</span></div>
+    <div class="i-foot"><span>${L("Date et heure d'impression :", "Printed on:")}</span> <b>${stamp}</b> <span class="i-ver">· ${v(verLabel(cfg.type))}${s.id ? ` · ${L("Réf.", "Ref.")} ${v(s.id)}` : ""}</span></div>
   </div>`;
 }
+const ctrlHtml = p => ctrlHtmlG(CTRL_SYS, p), ctrlPrint = s => ctrlPrintG(CTRL_SYS, s);
+const ctrlpHtml = p => ctrlHtmlG(CTRL_PUMP, p), ctrlpPrint = s => ctrlPrintG(CTRL_PUMP, s);
 
 /* ---------- versions des formulaires ----------
    À AUGMENTER à chaque modification d'un formulaire (champs, libellés, mise en page) : le numéro s'imprime sur chaque PDF.
@@ -3718,7 +3729,8 @@ const VERSIONS = {
   vfd:     ["1.0", "2026-10-03"],
   ident:   ["1.3", "2026-10-17"],
   pump:    ["3.5", "2026-08-15"],
-  ctrl:    ["2.7", "2026-10-17"]
+  ctrl:    ["2.8", "2026-10-18"],
+  ctrlp:   ["1.0", "2026-10-18"]
 };
 
 /* ---------- registre ---------- */
@@ -3780,7 +3792,16 @@ const FORMS = {
     get short() { return L("Feuille des contrôles - Système", "Control sheet - System"); },
     get desc() { return L("Grande feuille : # job, client, projet, unité, et lignes de contrôle avec initiales.", "Large sheet: # job, customer, project, unit, and checklist lines with initials."); },
     html: ctrlHtml, refresh: ctrlRefresh, print: ctrlPrint,
-    blank: () => Object.fromEntries(CTRL_ITEMS.map(([k]) => ["opt_" + k, CTRL_DEFAULT.includes(k)])),
+    blank: () => ctrlBlank(CTRL_SYS),
+    label: s => [s.customer, s.job && "Job " + s.job, s.block].filter(Boolean).join(" — ")
+  },
+  ctrlp: {
+    group: "internal", folder: "Feuilles des contrôles - Pompe", fileTag: "Controle-Pompe",
+    get title() { return L("Feuille des contrôles - Pompe", "Control sheet - Pump"); },
+    get short() { return L("Feuille des contrôles - Pompe", "Control sheet - Pump"); },
+    get desc() { return L("Grande feuille : # job, client, projet, unité, code QR et contrôle de la pompe (assemblage, alignement, tester, drive…).", "Large sheet: # job, customer, project, unit, QR code and pump check (assembly, alignment, testing, drive…)."); },
+    html: ctrlpHtml, refresh: ctrlRefresh, print: ctrlpPrint,
+    blank: () => ctrlBlank(CTRL_PUMP),
     label: s => [s.customer, s.job && "Job " + s.job, s.block].filter(Boolean).join(" — ")
   },
   req: {
@@ -3807,7 +3828,8 @@ Object.entries(FORMS).forEach(([t, d]) => {
   d.print = function (s) { PRINT_TYPE = t; try { return d.bilingualPdf ? bilingual(() => orig.call(this, s)) : orig.call(this, s); } finally { PRINT_TYPE = null; } };
 });
 FORMS.ident.ownStamp = true;
-FORMS.ctrl.ownStamp = true;                  // la feuille de contrôle a sa propre ligne date / heure / version
+FORMS.ctrl.ownStamp = true;
+FORMS.ctrlp.ownStamp = true;                 // idem : la feuille des contrôles - pompe a sa propre ligne date / heure / version                  // la feuille de contrôle a sa propre ligne date / heure / version
 FORMS.pump.bilingualPdf = true;              // le PDF du Test de pompe est toujours en français ET en anglais                   // la feuille a déjà sa propre ligne date / heure / version
 
 /* signature du contenu d'un rapport (ignore les champs de suivi) : sert à savoir s'il a changé depuis l'impression / l'envoi */
@@ -3820,7 +3842,7 @@ function contentKey(s) {
 
 /* formulaires internes : jamais rangés sur Google Drive (courriel ou impression seulement) */
 /* tous les formulaires sont enregistrés sur Google Drive, SAUF la feuille d'identification job et la feuille des contrôles - système (courriel ou impression seulement) */
-const NO_DRIVE = ["ident", "ctrl"];                 // feuille d'identification job + feuille des contrôles - système
+const NO_DRIVE = ["ident", "ctrl", "ctrlp"];           // feuille d'identification job + feuilles des contrôles (système et pompe)
 const storesOnDrive = t => !!FORMS[t] && !NO_DRIVE.includes(t);
 
 window.Flo = { FORMS, esc, times, fmt, L, contentKey, stampText, stampNow, verLabel, storesOnDrive, pumpCalc, bilingual, setLang: l => { LANG = l === "en" ? "en" : "fr"; }, getLang: () => LANG };
