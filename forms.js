@@ -3631,7 +3631,8 @@ const CTRL_LEGACY = ["align", "elec", "prog"];                   // anciens rapp
 // liste de la feuille des contrôles - POMPE
 const CTRL_PUMP_ITEMS = [["assy", "Assemblage", "Assembly"], ["trim", "Impeller Trimmer", "Impeller Trimmer"], ["align", "Alignement", "Alignment"],
   ["grnd", "Shaft grounding kit", "Shaft grounding kit"], ["sleeve", "Sleeve SS", "Sleeve SS"], ["flush", "Flush Line", "Flush Line"],
-  ["base", "Base mécanique", "Mechanical base"], ["test", "Tester", "Testing"], ["drive", "Drive", "Drive"]];
+  ["base", "Base mécanique", "Mechanical base"], ["test", "Tester", "Testing"], ["drive", "Drive", "Drive"],
+  ["qc", "Contrôle qualité", "Quality control"]];
 // code QR : lien vers la soumission / le job dans l'ERP
 // numéro de base du # job : le premier groupe de chiffres, avant le tiret (6 chiffres max.) — ex. 175617-16 → 175617, 64648-3 → 64648
 const quoteUrl = val => { const m = String(val || "").match(/\d+/); const q = m ? m[0].slice(0, 6) : ""; return q ? "https://dev.flofab.com/Quotes/" + q + "?t=6" : ""; };
@@ -3650,7 +3651,7 @@ const qrSvg = text => {
 const CTRL_REQUIRED = ["qc"];                                       // toujours imprimée : contrôle qualité obligatoire
 // une configuration par feuille de contrôle (même mise en page, mêmes champs, même code QR ; seule la liste change)
 const CTRL_SYS = { type: "ctrl", titleFr: "Feuille des contrôles - Système", titleEn: "Control sheet - System", items: CTRL_ITEMS, required: CTRL_REQUIRED, legacy: CTRL_LEGACY };
-const CTRL_PUMP = { type: "ctrlp", titleFr: "Feuille des contrôles - Pompe", titleEn: "Control sheet - Pump", items: CTRL_PUMP_ITEMS, required: [], legacy: [] };
+const CTRL_PUMP = { type: "ctrlp", titleFr: "Feuille des contrôles - Pompe", titleEn: "Control sheet - Pump", items: CTRL_PUMP_ITEMS, required: ["qc"], legacy: [] };       // contrôle qualité obligatoire, comme la feuille Système
 const ctrlSelG = (cfg, s) => { const any = cfg.items.some(([k]) => ("opt_" + k) in s); return cfg.items.filter(([k]) => cfg.required.includes(k) || (any ? !!s["opt_" + k] : cfg.legacy.includes(k))); };
 const ctrlBlank = cfg => Object.fromEntries(cfg.items.map(([k]) => ["opt_" + k, false]));
 function ctrlHtmlG(cfg, p) {
@@ -3697,7 +3698,7 @@ function ctrlPrintG(cfg, s) {
   const l3 = u || n ? `${u || "_"}/${n || "_"}` : "_/_";
   const ph = (val, txt) => val ? "" : " ph";
   const items = ctrlSelG(cfg, s), nI = items.length;                     // plus il y a de lignes, plus le texte est compact
-  const itemPt = nI <= 3 ? 34 : nI <= 5 ? 30 : 26, rowGap = nI <= 3 ? 34 : nI <= 5 ? 24 : 14, big = nI <= 3 ? 80 : nI <= 5 ? 72 : 64;
+  const itemPt = nI <= 3 ? 34 : nI <= 5 ? 30 : nI <= 8 ? 26 : 24, rowGap = nI <= 3 ? 34 : nI <= 5 ? 24 : nI <= 8 ? 14 : 9, big = nI <= 3 ? 80 : nI <= 5 ? 72 : 64;
   const bigSz = fit(jobT, big, 520);                                         // # job : en grand
   const midMax = nI <= 5 ? 44 : 40;                                          // client, projet, unité / sur : même grosseur
   const midSz = Math.min(fit(client, midMax, 520), fit(proj, midMax, 520), fit(l3, midMax, 520));
@@ -3730,7 +3731,7 @@ const VERSIONS = {
   ident:   ["1.3", "2026-10-17"],
   pump:    ["3.5", "2026-08-15"],
   ctrl:    ["2.8", "2026-10-18"],
-  ctrlp:   ["1.0", "2026-10-18"]
+  ctrlp:   ["1.1", "2026-10-18"]
 };
 
 /* ---------- registre ---------- */
