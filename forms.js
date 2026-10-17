@@ -3619,7 +3619,7 @@ function pumpPrint(s) {
 }
 
 /* =====================================================================
-   9. FEUILLE DE CONTRÔLE (formulaire interne)
+   9. FEUILLE DES CONTRÔLES - SYSTÈME (formulaire interne)
    Grande feuille posée sur l'équipement : client, # job + bloc, puissance et unité (n/n),
    puis la liste de contrôle Alignement / Électrique / Programmation (cases à cocher à la main ou dans l'app).
    ===================================================================== */
@@ -3646,8 +3646,8 @@ const CTRL_REQUIRED = ["qc"];                                       // toujours 
 const ctrlSel = s => { const any = CTRL_ITEMS.some(([k]) => ("opt_" + k) in s); return CTRL_ITEMS.filter(([k]) => CTRL_REQUIRED.includes(k) || (any ? !!s["opt_" + k] : CTRL_DEFAULT.includes(k))); };
 function ctrlHtml(p) {
   return `
-  <section class="sec" aria-label="${L("Feuille de contrôle", "Control sheet")}">
-    <h2 class="bar">${L("FEUILLE DE CONTRÔLE", "CONTROL SHEET")}</h2>
+  <section class="sec" aria-label="${L("Feuille des contrôles - Système", "Control sheet - System")}">
+    <h2 class="bar">${L("FEUILLE DES CONTRÔLES - SYSTÈME", "CONTROL SHEET - SYSTEM")}</h2>
     <div class="grid2">
       ${fld(p, "job", L("# Job", "# Job"))}${fld(p, "customer", L("Client", "Customer"), { auto: "organization" })}
       ${fld(p, "block", L("Projet", "Project"))}
@@ -3718,7 +3718,7 @@ const VERSIONS = {
   vfd:     ["1.0", "2026-10-03"],
   ident:   ["1.3", "2026-10-17"],
   pump:    ["3.5", "2026-08-15"],
-  ctrl:    ["2.5", "2026-10-17"]
+  ctrl:    ["2.7", "2026-10-17"]
 };
 
 /* ---------- registre ---------- */
@@ -3775,9 +3775,9 @@ const FORMS = {
     label: s => [s.project || s.facility, s.job && "Job " + s.job, s.model && (s.model + (s.serial ? " / " + s.serial : ""))].filter(Boolean).join(" — ")
   },
   ctrl: {
-    group: "internal", folder: "Feuilles de contrôle", fileTag: "Controle",
-    get title() { return L("Feuille de contrôle", "Control sheet"); },
-    get short() { return L("Feuille de contrôle", "Control sheet"); },
+    group: "internal", folder: "Feuilles des contrôles - Système", fileTag: "Controle-Systeme",
+    get title() { return L("Feuille des contrôles - Système", "Control sheet - System"); },
+    get short() { return L("Feuille des contrôles - Système", "Control sheet - System"); },
     get desc() { return L("Grande feuille : # job, client, projet, unité, et lignes de contrôle avec initiales.", "Large sheet: # job, customer, project, unit, and checklist lines with initials."); },
     html: ctrlHtml, refresh: ctrlRefresh, print: ctrlPrint,
     blank: () => Object.fromEntries(CTRL_ITEMS.map(([k]) => ["opt_" + k, CTRL_DEFAULT.includes(k)])),
@@ -3819,8 +3819,8 @@ function contentKey(s) {
 }
 
 /* formulaires internes : jamais rangés sur Google Drive (courriel ou impression seulement) */
-/* tous les formulaires sont enregistrés sur Google Drive, SAUF la feuille d'identification job (courriel ou impression seulement) */
-const NO_DRIVE = ["ident"];
+/* tous les formulaires sont enregistrés sur Google Drive, SAUF la feuille d'identification job et la feuille des contrôles - système (courriel ou impression seulement) */
+const NO_DRIVE = ["ident", "ctrl"];                 // feuille d'identification job + feuille des contrôles - système
 const storesOnDrive = t => !!FORMS[t] && !NO_DRIVE.includes(t);
 
 window.Flo = { FORMS, esc, times, fmt, L, contentKey, stampText, stampNow, verLabel, storesOnDrive, pumpCalc, bilingual, setLang: l => { LANG = l === "en" ? "en" : "fr"; }, getLang: () => LANG };

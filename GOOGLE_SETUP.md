@@ -35,7 +35,7 @@ Réglages du script (⚙ **Paramètres du projet → Propriétés du script**) :
 | `ROOT_FOLDER_ID` | ID d'un dossier Drive existant où tout sera rangé | dossier « Flo-Fab - Formulaires » créé automatiquement |
 | `ALWAYS_CC` | Adresse(s) mises en copie de **tous** les courriels (ex. boîte de l'entreprise) | aucune |
 | `FROM_NAME` | Nom affiché de l'expéditeur | Flo-Fab Inc. |
-| `NO_DRIVE_TYPES` | Formulaires **jamais rangés sur Drive** (courriel seulement), séparés par des virgules. Règle appliquée par le script lui-même. | `ident` (la feuille d'identification job) (les formulaires internes) |
+| `NO_DRIVE_TYPES` | Formulaires **jamais rangés sur Drive** (courriel seulement), séparés par des virgules. Règle appliquée par le script lui-même. | `ident,ctrl` (feuille d'identification job + feuille des contrôles - système) |
 | `MAX_EMAILS_PER_DAY` | Plafond de destinataires (to + cc) par jour | 60 |
 | `MAX_UPLOADS_PER_DAY` | Plafond de fichiers rangés sur Drive par jour | 400 |
 
@@ -83,15 +83,15 @@ Limites :
 - **Mot de passe oublié** : dans la console Google Apps Script, supprimez la propriété `ADMIN_PASSWORD`, exécutez `creerAcces`, lisez le nouveau mot de passe dans le journal.
 
 ## Ce qui va sur Drive
-**Tous les formulaires sont enregistrés sur Google Drive** (Rapport de service, Mises en marche, Estimation, Réquisition d'achat, QC contrôle programmation, Test de performance de pompe, Feuille de contrôle), **sauf la Feuille d'identification job**, qui s'envoie seulement par courriel (PDF joint, rien n'est conservé) ou s'imprime.
-La règle est appliquée **deux fois** : par l'application, et par le script (propriété `NO_DRIVE_TYPES`, défaut `ident`), qui refuse de ranger ce type même si une version modifiée de l'application le demandait.
-*Si vous aviez créé vous-même la propriété `NO_DRIVE_TYPES` dans le script avec l'ancienne liste (`est,req,vfd,ident,pump`), remplacez-la par `ident` ou supprimez-la.*
+**Tous les formulaires sont enregistrés sur Google Drive** (Rapport de service, Mises en marche, Estimation, Réquisition d'achat, QC contrôle programmation, Test de performance de pompe), **sauf la Feuille d'identification job et la Feuille des contrôles - Système**, qui s'envoient seulement par courriel (PDF joint, rien n'est conservé) ou s'impriment.
+La règle est appliquée **deux fois** : par l'application, et par le script (propriété `NO_DRIVE_TYPES`, défaut `ident,ctrl`), qui refuse de ranger ce type même si une version modifiée de l'application le demandait.
+*Si vous aviez créé vous-même la propriété `NO_DRIVE_TYPES` dans le script avec l'ancienne liste (`est,req,vfd,ident,pump`), remplacez-la par `ident,ctrl` ou supprimez-la.*
 
 ## Ce que ça fait au quotidien
 | Action | Résultat |
 |---|---|
-| **Enregistrer** | Enregistre sur l'appareil **et** (si `autoDrive`) envoie le PDF + les données sur Drive — tous les formulaires sauf la feuille d'identification job. |
-| **Courriel** | Fenêtre (destinataire, Cc, objet, message) puis envoi **avec le PDF joint**. Une copie est rangée sur Drive, sauf pour la feuille d'identification job (**aucune copie**). |
+| **Enregistrer** | Enregistre sur l'appareil **et** (si `autoDrive`) envoie le PDF + les données sur Drive — tous les formulaires sauf la feuille d'identification job et la feuille des contrôles - système. |
+| **Courriel** | Fenêtre (destinataire, Cc, objet, message) puis envoi **avec le PDF joint**. Une copie est rangée sur Drive, sauf pour la feuille d'identification job et la feuille des contrôles - système (**aucune copie**). |
 | **Sans réseau / script en panne** | Le rapport reste enregistré sur l'appareil, marqué « à synchroniser ». Il part au retour du réseau (si `autoDrive`) ou avec le bouton **Synchroniser**. |
 | **Rapport modifié puis réenregistré** | Le fichier Drive est remplacé (l'ancienne version va à la corbeille Drive). Pas de doublons. |
 
@@ -106,7 +106,6 @@ Flo-Fab - Formulaires /
   Réquisitions d'achat /  …
   QC contrôle programmation /  …
   Tests de pompe /  …
-  Feuilles de contrôle /  …
 ```
 
 ## Sécurité — à lire
