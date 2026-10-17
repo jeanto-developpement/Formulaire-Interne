@@ -898,6 +898,7 @@ function identHtml(p) {
       ${fld(p, "quote", "#Quote")}${fld(p, "customer", L("Client", "Customer"), { auto: "organization" })}
       ${fld(p, "project", L("Projet", "Project"))}${fld(p, "job", L("# Job", "# Job"))}
     </div>
+    <div class="qrprev" data-qr></div>
     <p class="mintro" style="padding:10px 14px;margin:0;border-top:1px solid var(--line)">${L(
       "La feuille s'imprime en grand format. Un champ laissé vide s'imprime en gris clair (à remplir à la main). La date et l'heure d'impression s'ajoutent automatiquement au bas de la feuille.",
       "The sheet prints in large type. An empty field prints in light grey (to fill in by hand). The print date and time are added automatically at the bottom of the sheet.")}</p>
@@ -917,8 +918,9 @@ function identPrint(s) {
     const fs = Math.floor(Math.max(14, Math.min(80, 500 / w1)));           // 500 pt de large disponibles (≈ 670 px)
     return `<div class="i-line${t ? "" : " ph"}" style="font-size:${fs}pt">${v(txt)}</div>`;
   };
+  const qurl = identUrl(s), qr = qrSvg(qurl);                        // code QR vers la soumission : #Quote
   return `<div class="i-page">
-    <img class="i-logo" src="logo.svg" alt="">
+    <div class="c-head"><img class="i-logo" src="logo.svg" alt="">${qr ? `<div class="c-qr">${qr}<small>${v(qurl.replace("https://", ""))}</small></div>` : ""}</div>
     <div class="i-lines">${line(s.quote, "#Quote")}${line(s.customer, L("Client", "Customer"))}${line(s.project, L("Projet", "Project"))}${line(s.job, "# Job")}</div>
     <div class="i-foot"><span>${L("Date et heure d'impression :", "Printed on:")}</span> <b>${stamp}</b> <span class="i-ver">· ${v(verLabel("ident"))}</span></div>
   </div>`;
@@ -1321,12 +1323,15 @@ function pumpPrint(s) {
    Grande feuille posée sur l'équipement : client, # job + bloc, puissance et unité (n/n),
    puis la liste de contrôle Alignement / Électrique / Programmation (cases à cocher à la main ou dans l'app).
    ===================================================================== */
-const CTRL_ITEMS = [["align", "Alignement", "Alignment"], ["elec", "Électrique", "Electrical"], ["prog", "Programmation", "Programming"],
-  ["isol", "Isolation", "Insulation"], ["fini", "Finition", "Finishing"], ["rust", "Inhibiteur de rouille", "Rust inhibitor"],
+const CTRL_ITEMS = [["assy", "Assemblage", "Assembly"], ["align", "Alignement", "Alignment"], ["elec", "Électrique", "Electrical"], ["prog", "Programmation", "Programming"],
+  ["isol", "Isolation", "Insulation"], ["test", "Tester", "Testing"], ["fini", "Finition", "Finishing"], ["rust", "Inhibiteur de rouille", "Rust inhibitor"],
   ["loose", "Pièces shippées lousses", "Loose-shipped parts"], ["qc", "Contrôle qualité", "Quality control"]];
 const CTRL_DEFAULT = ["align", "elec", "prog"];
 // code QR : lien vers la soumission / le job dans l'ERP
-const ctrlUrl = s => { const j = String(s.job || "").trim(); return j ? "https://dev.flofab.com/Quotes/" + encodeURIComponent(j) : ""; };
+// numéro de base du # job : le premier groupe de chiffres, avant le tiret (6 chiffres max.) — ex. 175617-16 → 175617, 64648-3 → 64648
+const quoteUrl = val => { const m = String(val || "").match(/\d+/); const q = m ? m[0].slice(0, 6) : ""; return q ? "https://dev.flofab.com/Quotes/" + q + "?t=6" : ""; };
+const ctrlUrl = s => quoteUrl(s.job);                                  // feuille de contrôle : # job
+const identUrl = s => quoteUrl(s.quote);                               // feuille d'identification : #Quote
 const qrSvg = text => {
   if (!text || typeof window.qrcode !== "function") return "";
   try {
@@ -1337,14 +1342,15 @@ const qrSvg = text => {
   } catch (e) { return ""; }
 };
 // lignes à imprimer : celles cochées dans l'app (par défaut : alignement, électrique, programmation)
-const ctrlSel = s => { const any = CTRL_ITEMS.some(([k]) => ("opt_" + k) in s); return CTRL_ITEMS.filter(([k]) => any ? !!s["opt_" + k] : CTRL_DEFAULT.includes(k)); };
+const CTRL_REQUIRED = ["qc"];                                       // toujours imprimée : contrôle qualité obligatoire
+const ctrlSel = s => { const any = CTRL_ITEMS.some(([k]) => ("opt_" + k) in s); return CTRL_ITEMS.filter(([k]) => CTRL_REQUIRED.includes(k) || (any ? !!s["opt_" + k] : CTRL_DEFAULT.includes(k))); };
 function ctrlHtml(p) {
   return `
   <section class="sec" aria-label="${L("Feuille de contrôle", "Control sheet")}">
     <h2 class="bar">${L("FEUILLE DE CONTRÔLE", "CONTROL SHEET")}</h2>
     <div class="grid2">
-      ${fld(p, "customer", L("Client", "Customer"), { auto: "organization" })}${fld(p, "job", L("# Job", "# Job"))}
-      ${fld(p, "block", L("Bloc / emplacement (ex. BLOCK 7)", "Block / location (e.g. BLOCK 7)"))}${fld(p, "hp", L("Puissance (HP)", "Power (HP)"), { mode: "decimal" })}
+      ${fld(p, "job", L("# Job", "# Job"))}${fld(p, "customer", L("Client", "Customer"), { auto: "organization" })}
+      ${fld(p, "block", L("Projet", "Project"))}
       ${fld(p, "unit", L("Unité n°", "Unit no."), { mode: "numeric" })}${fld(p, "units", L("Sur (nombre d'unités)", "Of (number of units)"), { mode: "numeric" })}
     </div>
     <div class="qrprev" data-qr></div>
@@ -1352,37 +1358,47 @@ function ctrlHtml(p) {
   <section class="sec" aria-label="${L("Liste de contrôle", "Checklist")}">
     <h2 class="bar">${L("LISTE DE CONTRÔLE — LIGNES À IMPRIMER", "CHECKLIST — LINES TO PRINT")}</h2>
     <p class="mintro" style="padding:10px 14px 0;margin:0">${L("Choisissez les lignes qui apparaîtront sur la feuille. Chacune s'imprime avec une case à cocher et une ligne pour les initiales.", "Choose the lines that will appear on the sheet. Each one prints with a box to tick and a line for initials.")}</p>
-    <div class="ckl">${CTRL_ITEMS.map(([k, fr, en]) => `<label class="chk"><input type="checkbox" data-k="opt_${k}"><span>${L(fr, en)}</span></label>`).join("")}</div>
+    <div class="ckl">${CTRL_ITEMS.map(([k, fr, en]) => CTRL_REQUIRED.includes(k)
+      ? `<label class="chk"><input type="checkbox" checked disabled><span>${L(fr, en)} <em class="req">${L("obligatoire", "required")}</em></span></label>`
+      : `<label class="chk"><input type="checkbox" data-k="opt_${k}"><span>${L(fr, en)}</span></label>`).join("")}</div>
     <p class="mintro" style="padding:10px 14px;margin:0;border-top:1px solid var(--line)">${L(
       "La feuille s'imprime en grand format ; les cases et les initiales se remplissent à la main sur la feuille. La date, l'heure et la version s'ajoutent au bas de la feuille.",
       "The sheet prints in large type; boxes and initials are filled in by hand on the sheet. The date, time and version are added at the bottom of the sheet.")}</p>
   </section>`;
 }
-function ctrlRefresh(host, s) {
-  const box = host.querySelector("[data-qr]"); if (!box) return;
-  const url = ctrlUrl(s), qr = qrSvg(url);
-  box.innerHTML = url ? `${qr}<div><b>${L("Code QR de la feuille", "Sheet QR code")}</b><a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a><span>${L("Scanner pour ouvrir le job dans l'ERP (dev.flofab.com).", "Scan to open the job in the ERP (dev.flofab.com).")}</span></div>`
-    : `<div><b>${L("Code QR de la feuille", "Sheet QR code")}</b><span>${L("Entrez le # job : le code QR (lien dev.flofab.com/Quotes/…) s'imprimera en haut à droite.", "Enter the # job: the QR code (link dev.flofab.com/Quotes/…) will print at the top right.")}</span></div>`;
+function qrRefresh(urlFn, fieldFr, fieldEn) {
+  return (host, s) => {
+    const box = host.querySelector("[data-qr]"); if (!box) return;
+    const url = urlFn(s), qr = qrSvg(url);
+    box.innerHTML = url ? `${qr}<div><b>${L("Code QR de la feuille", "Sheet QR code")}</b><a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a><span>${L("Scanner pour ouvrir la soumission dans l'ERP (dev.flofab.com).", "Scan to open the quote in the ERP (dev.flofab.com).")}</span></div>`
+      : `<div><b>${L("Code QR de la feuille", "Sheet QR code")}</b><span>${L(`Entrez le ${fieldFr} : le code QR (lien dev.flofab.com/Quotes/…) s'imprimera en haut à droite.`, `Enter the ${fieldEn}: the QR code (link dev.flofab.com/Quotes/…) will print at the top right.`)}</span></div>`;
+  };
 }
+const ctrlRefresh = qrRefresh(ctrlUrl, "# job", "# job");
+const identRefresh = qrRefresh(identUrl, "#Quote", "#Quote");
 function ctrlPrint(s) {
   const stamp = stampNow();
   // taille du nom du client calculée d'après sa largeur réelle, pour qu'il tienne sur une ligne
   const cx = ctrlPrint.cx || (ctrlPrint.cx = document.createElement("canvas").getContext("2d"));
   const fit = (txt, max, avail) => { cx.font = '900 100px "Arial Black", Arial, Helvetica, sans-serif'; const w1 = Math.max(0.01, cx.measureText(txt).width / 100); return Math.floor(Math.max(18, Math.min(max, avail / w1))); };
   const client = String(s.customer || "").trim() || L("CLIENT", "CUSTOMER");
-  const l2 = [s.job, s.block].map(x => String(x || "").trim()).filter(Boolean).join("  ") || L("# JOB  BLOC", "# JOB  BLOCK");
-  const hp = String(s.hp || "").trim(), u = String(s.unit || "").trim(), n = String(s.units || "").trim();
-  const l3 = [hp ? hp + "HP" : "", u || n ? `${u || "_"}/${n || "_"}` : ""].filter(Boolean).join(" ") || "HP  _/_";
+  const jobT = String(s.job || "").trim() || "# JOB", proj = String(s.block || "").trim() || L("PROJET", "PROJECT");
+  const u = String(s.unit || "").trim(), n = String(s.units || "").trim();
+  const l3 = u || n ? `${u || "_"}/${n || "_"}` : "_/_";
   const ph = (val, txt) => val ? "" : " ph";
   const items = ctrlSel(s), nI = items.length;                     // plus il y a de lignes, plus le texte est compact
-  const itemPt = nI <= 3 ? 44 : nI <= 5 ? 38 : 32, rowGap = nI <= 3 ? 34 : nI <= 5 ? 26 : 18, big = nI <= 3 ? 88 : nI <= 5 ? 80 : 72;
+  const itemPt = nI <= 3 ? 34 : nI <= 5 ? 30 : 26, rowGap = nI <= 3 ? 34 : nI <= 5 ? 24 : 14, big = nI <= 3 ? 80 : nI <= 5 ? 72 : 64;
+  const bigSz = fit(jobT, big, 520);                                         // # job : en grand
+  const midMax = nI <= 5 ? 44 : 40;                                          // client, projet, unité / sur : même grosseur
+  const midSz = Math.min(fit(client, midMax, 520), fit(proj, midMax, 520), fit(l3, midMax, 520));
   const url = ctrlUrl(s), qr = qrSvg(url);
   return `<div class="c-page">
     <div class="c-head"><img class="i-logo" src="logo.svg" alt="">${qr ? `<div class="c-qr">${qr}<small>${v(url.replace("https://", ""))}</small></div>` : ""}</div>
     <div class="c-lines">
-      <div class="c-client${ph(s.customer)}" style="font-size:${fit(client, big, 520)}pt">${v(client.toUpperCase())}</div>
-      <div class="c-l2${ph(s.job || s.block)}" style="font-size:${fit(l2, 34, 520)}pt">${v(l2.toUpperCase())}</div>
-      <div class="c-l3${ph(hp || u || n)}" style="font-size:${fit(l3, 48, 520)}pt">${v(l3.toUpperCase())}</div>
+      <div class="c-client${ph(s.job)}" style="font-size:${bigSz}pt">${v(jobT.toUpperCase())}</div>
+      <div class="c-l2${ph(s.customer)}" style="font-size:${midSz}pt">${v(client.toUpperCase())}</div>
+      <div class="c-l2${ph(s.block)}" style="font-size:${midSz}pt">${v(proj.toUpperCase())}</div>
+      <div class="c-l3${ph(u || n)}" style="font-size:${midSz}pt">${v(l3.toUpperCase())}</div>
       ${items.length ? `<div class="c-list" style="font-size:${itemPt}pt;row-gap:${rowGap}px">${items.map(([k, fr, en]) => `<span class="c-lab">${v(L(fr, en))}</span><span class="c-box"></span><span class="c-init"><small>${L("Init.", "Init.")}</small><i></i></span>`).join("")}</div>` : ""}
     </div>
     <div class="i-foot"><span>${L("Date et heure d'impression :", "Printed on:")}</span> <b>${stamp}</b> <span class="i-ver">· ${v(verLabel("ctrl"))}${s.id ? ` · ${L("Réf.", "Ref.")} ${v(s.id)}` : ""}</span></div>
@@ -1399,9 +1415,9 @@ const VERSIONS = {
   est:     ["1.0", "2026-10-03"],
   req:     ["1.0", "2026-10-03"],
   vfd:     ["1.0", "2026-10-03"],
-  ident:   ["1.1", "2026-10-08"],
+  ident:   ["1.3", "2026-10-17"],
   pump:    ["3.5", "2026-08-15"],
-  ctrl:    ["1.2", "2026-10-16"]
+  ctrl:    ["2.5", "2026-10-17"]
 };
 
 /* ---------- registre ---------- */
@@ -1444,7 +1460,7 @@ const FORMS = {
     get title() { return L("Feuille d'identification job", "Job identification sheet"); },
     get short() { return L("Identification job", "Job ID sheet"); },
     get desc() { return L("Grande feuille #Quote, client, projet, # Job avec date et heure d'impression.", "Large sheet: #Quote, customer, project, # Job, with print date and time."); },
-    html: identHtml, print: identPrint,
+    html: identHtml, refresh: identRefresh, print: identPrint,
     blank: () => ({}),
     label: s => [s.customer || s.project, s.job && "Job " + s.job].filter(Boolean).join(" — ")
   },
@@ -1461,7 +1477,7 @@ const FORMS = {
     group: "internal", folder: "Feuilles de contrôle", fileTag: "Controle",
     get title() { return L("Feuille de contrôle", "Control sheet"); },
     get short() { return L("Feuille de contrôle", "Control sheet"); },
-    get desc() { return L("Grande feuille : client, # job, bloc, HP, unité, et contrôle alignement / électrique / programmation.", "Large sheet: customer, # job, block, HP, unit, and alignment / electrical / programming check."); },
+    get desc() { return L("Grande feuille : # job, client, projet, unité, et lignes de contrôle avec initiales.", "Large sheet: # job, customer, project, unit, and checklist lines with initials."); },
     html: ctrlHtml, refresh: ctrlRefresh, print: ctrlPrint,
     blank: () => Object.fromEntries(CTRL_ITEMS.map(([k]) => ["opt_" + k, CTRL_DEFAULT.includes(k)])),
     label: s => [s.customer, s.job && "Job " + s.job, s.block].filter(Boolean).join(" — ")
