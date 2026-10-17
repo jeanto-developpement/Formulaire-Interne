@@ -3632,7 +3632,7 @@ const CTRL_LEGACY = ["align", "elec", "prog"];                   // anciens rapp
 const CTRL_PUMP_ITEMS = [["assy", "Assemblage", "Assembly"], ["trim", "Impeller Trimmer", "Impeller Trimmer"], ["align", "Alignement", "Alignment"],
   ["grnd", "Shaft grounding kit", "Shaft grounding kit"], ["sleeve", "Sleeve SS", "Sleeve SS"], ["flush", "Flush Line", "Flush Line"],
   ["base", "Base mécanique", "Mechanical base"], ["test", "Tester", "Testing"], ["drive", "Drive", "Drive"],
-  ["qc", "Contrôle qualité", "Quality control"]];
+  ["fini", "Finition", "Finishing"], ["qc", "Contrôle qualité", "Quality control"]];
 // code QR : lien vers la soumission / le job dans l'ERP
 // numéro de base du # job : le premier groupe de chiffres, avant le tiret (6 chiffres max.) — ex. 175617-16 → 175617, 64648-3 → 64648
 const quoteUrl = val => { const m = String(val || "").match(/\d+/); const q = m ? m[0].slice(0, 6) : ""; return q ? "https://dev.flofab.com/Quotes/" + q + "?t=6" : ""; };
@@ -3698,7 +3698,7 @@ function ctrlPrintG(cfg, s) {
   const l3 = u || n ? `${u || "_"}/${n || "_"}` : "_/_";
   const ph = (val, txt) => val ? "" : " ph";
   const items = ctrlSelG(cfg, s), nI = items.length;                     // plus il y a de lignes, plus le texte est compact
-  const itemPt = nI <= 3 ? 34 : nI <= 5 ? 30 : nI <= 8 ? 26 : 24, rowGap = nI <= 3 ? 34 : nI <= 5 ? 24 : nI <= 8 ? 14 : 9, big = nI <= 3 ? 80 : nI <= 5 ? 72 : 64;
+  const itemPt = nI <= 3 ? 34 : nI <= 5 ? 30 : nI <= 8 ? 26 : nI <= 10 ? 24 : 22, rowGap = nI <= 3 ? 34 : nI <= 5 ? 24 : nI <= 8 ? 14 : nI <= 10 ? 9 : 7, big = nI <= 3 ? 80 : nI <= 5 ? 72 : 64;
   const bigSz = fit(jobT, big, 520);                                         // # job : en grand
   const midMax = nI <= 5 ? 44 : 40;                                          // client, projet, unité / sur : même grosseur
   const midSz = Math.min(fit(client, midMax, 520), fit(proj, midMax, 520), fit(l3, midMax, 520));
@@ -3731,7 +3731,7 @@ const VERSIONS = {
   ident:   ["1.3", "2026-10-17"],
   pump:    ["3.5", "2026-08-15"],
   ctrl:    ["2.8", "2026-10-18"],
-  ctrlp:   ["1.1", "2026-10-18"]
+  ctrlp:   ["1.2", "2026-10-18"]
 };
 
 /* ---------- registre ---------- */
