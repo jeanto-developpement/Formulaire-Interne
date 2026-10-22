@@ -516,11 +516,16 @@ table.r-tbl td{vertical-align:middle}
 .qrprev a{color:var(--blue);word-break:break-all}
 .qrprev span{color:var(--muted)}
 .ckl .chk{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);font-size:1.08rem;font-weight:600;min-height:52px;margin:0}
+.allbox .chk{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);font-size:1.08rem;font-weight:600;min-height:52px;margin:0}
 .ckl .chk:first-child{border-top:0}
 .ckl .chk input{width:24px;height:24px}
+.allbox .chk input{width:24px;height:24px}
+.xtra{border-top:1px solid var(--line)}
+.xtra .grid2{padding-top:4px}
 .ckl .chk em.req{font-style:normal;font-size:.75rem;font-weight:700;color:var(--muted);background:var(--field);padding:2px 8px;border-radius:10px;margin-left:6px}
 .c-page{height:880px;height:calc(100vh - 18mm - 6px);height:min(985px,calc(100vh - 18mm - 6px));overflow:hidden;break-inside:avoid;page-break-after:avoid;display:flex;flex-direction:column;font-family:"Arial Black",Arial,Helvetica,sans-serif;font-weight:900;color:#111}
 #print.capture .c-page{height:985px}
+.c-page:not(:last-child){break-after:page;page-break-after:always}      /* plusieurs feuilles : une par page */
 .c-head{display:flex;justify-content:space-between;align-items:flex-start}
 .c-qr{display:flex;flex-direction:column;align-items:center;gap:2px}
 .c-qr svg{width:1.35in;height:1.35in;display:block}

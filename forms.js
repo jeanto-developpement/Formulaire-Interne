@@ -2339,7 +2339,7 @@ function times(s) {
 
 /* ---------- gabarits écran ---------- */
 const fld = (p, k, label, o = {}) => {
-  const a = (o.auto ? ` autocomplete="${o.auto}"` : "") + (o.mode ? ` inputmode="${o.mode}"` : "") + (o.mirror ? ` data-mirror="${o.mirror}"` : "") + (o.pref ? ` data-pref="${o.pref}"` : "");
+  const a = (o.auto ? ` autocomplete="${o.auto}"` : "") + (o.mode ? ` inputmode="${o.mode}"` : "") + (o.mirror ? ` data-mirror="${o.mirror}"` : "") + (o.pref ? ` data-pref="${o.pref}"` : "") + (o.max ? ` maxlength="${o.max}"` : "") + (o.ph ? ` placeholder="${o.ph}"` : "");
   return `<div class="f"><label for="${p}-${k}">${label}</label><input type="${o.type || "text"}" id="${p}-${k}" data-k="${k}"${a}></div>`;
 };
 const area = (p, k, label, rows) =>
@@ -3654,6 +3654,8 @@ const CTRL_SYS = { type: "ctrl", titleFr: "Feuille des contrôles - Système", t
 const CTRL_PUMP = { type: "ctrlp", titleFr: "Feuille des contrôles - Pompe", titleEn: "Control sheet - Pump", items: CTRL_PUMP_ITEMS, required: ["qc"], legacy: [] };       // contrôle qualité obligatoire, comme la feuille Système
 const ctrlSelG = (cfg, s) => { const any = cfg.items.some(([k]) => ("opt_" + k) in s); return cfg.items.filter(([k]) => cfg.required.includes(k) || (any ? !!s["opt_" + k] : cfg.legacy.includes(k))); };
 const ctrlBlank = cfg => Object.fromEntries(cfg.items.map(([k]) => ["opt_" + k, false]));
+// nombre de feuilles à imprimer : 1, ou « Sur » (2 à 99) si « Imprimer toutes les feuilles » est coché (ex. 1 sur 5 → 1/5, 2/5, … 5/5)
+const ctrlCount = s => { const n = parseInt(String(s.units || "").replace(/\D/g, ""), 10); return s.allSheets && n >= 2 && n <= 99 ? n : 1; };
 function ctrlHtmlG(cfg, p) {
   return `
   <section class="sec" aria-label="${L(cfg.titleFr, cfg.titleEn)}">
@@ -3663,6 +3665,8 @@ function ctrlHtmlG(cfg, p) {
       ${fld(p, "block", L("Projet", "Project"))}
       ${fld(p, "unit", L("Unité n°", "Unit no."), { mode: "numeric" })}${fld(p, "units", L("Sur (nombre d'unités)", "Of (number of units)"), { mode: "numeric" })}
     </div>
+    <div class="allbox"><label class="chk"><input type="checkbox" data-k="allSheets"><span>${L("Imprimer toutes les feuilles (de 1 à « Sur »)", "Print all the sheets (from 1 to “Of”)")}</span></label></div>
+    <p class="mintro" style="padding:4px 14px 12px;margin:0" data-allhint></p>
     <div class="qrprev" data-qr></div>
   </section>
   <section class="sec" aria-label="${L("Liste de contrôle", "Checklist")}">
@@ -3671,6 +3675,10 @@ function ctrlHtmlG(cfg, p) {
     <div class="ckl">${cfg.items.map(([k, fr, en]) => cfg.required.includes(k)
       ? `<label class="chk"><input type="checkbox" checked disabled><span>${L(fr, en)} <em class="req">${L("obligatoire", "required")}</em></span></label>`
       : `<label class="chk"><input type="checkbox" data-k="opt_${k}"><span>${L(fr, en)}</span></label>`).join("")}</div>
+    <div class="xtra">
+      <p class="mintro" style="padding:10px 14px 0;margin:0">${L("Lignes ajoutées à la main (3 au maximum) : chacune s'imprime avec sa case et sa ligne d'initiales, juste avant « Contrôle qualité ». Laissez vide pour ne rien ajouter.", "Lines added by hand (3 at most): each prints with its box and initials line, just before “Quality control”. Leave empty to add nothing.")}</p>
+      <div class="grid2">${[1, 2, 3].map(i => fld(p, "extra" + i, L(`Ligne ajoutée ${i}`, `Added line ${i}`), { max: 40 })).join("")}</div>
+    </div>
     <p class="mintro" style="padding:10px 14px;margin:0;border-top:1px solid var(--line)">${L(
       "La feuille s'imprime en grand format ; les cases et les initiales se remplissent à la main sur la feuille. La date, l'heure et la version s'ajoutent au bas de la feuille.",
       "The sheet prints in large type; boxes and initials are filled in by hand on the sheet. The date, time and version are added at the bottom of the sheet.")}</p>
@@ -3685,7 +3693,16 @@ function qrRefresh(urlFn, fieldFr, fieldEn) {
       : `<div><b>${L("Code QR de la feuille", "Sheet QR code")}</b><span>${L(`Entrez le ${fieldFr} : le code QR (lien dev.flofab.com/Quotes/…) s'imprimera en haut à droite.`, `Enter the ${fieldEn}: the QR code (link dev.flofab.com/Quotes/…) will print at the top right.`)}</span></div>`;
   };
 }
-const ctrlRefresh = qrRefresh(ctrlUrl, "# job", "# job");
+const ctrlQrRefresh = qrRefresh(ctrlUrl, "# job", "# job");
+const ctrlRefresh = (host, s) => {
+  ctrlQrRefresh(host, s);
+  const h = host.querySelector("[data-allhint]"); if (!h) return;
+  const N = parseInt(String(s.units || "").replace(/\D/g, ""), 10), ok = N >= 2 && N <= 99, u = String(s.unit || "").trim() || "_";
+  h.textContent = s.allSheets
+    ? (ok ? L(`Imprimera ${N} feuilles : 1/${N}, 2/${N}, … ${N}/${N} (une page chacune).`, `Will print ${N} sheets: 1/${N}, 2/${N}, … ${N}/${N} (one page each).`)
+          : L("Entrez « Sur » (de 2 à 99) pour imprimer plusieurs feuilles.", "Enter “Of” (2 to 99) to print several sheets."))
+    : (ok ? L(`Une seule feuille sera imprimée (${u}/${N}). Cochez la case pour imprimer les ${N} feuilles.`, `A single sheet will be printed (${u}/${N}). Tick the box to print all ${N} sheets.`) : "");
+};
 const identRefresh = qrRefresh(identUrl, "#Quote", "#Quote");
 function ctrlPrintG(cfg, s) {
   const stamp = stampNow();
@@ -3695,25 +3712,32 @@ function ctrlPrintG(cfg, s) {
   const client = String(s.customer || "").trim() || L("CLIENT", "CUSTOMER");
   const jobT = String(s.job || "").trim() || "# JOB", proj = String(s.block || "").trim() || L("PROJET", "PROJECT");
   const u = String(s.unit || "").trim(), n = String(s.units || "").trim();
-  const l3 = u || n ? `${u || "_"}/${n || "_"}` : "_/_";
+  const N = ctrlCount(s);                                                    // 1 feuille, ou une par unité (1/5 … 5/5)
+  const l3One = u || n ? `${u || "_"}/${n || "_"}` : "_/_";
   const ph = (val, txt) => val ? "" : " ph";
-  const items = ctrlSelG(cfg, s), nI = items.length;                     // plus il y a de lignes, plus le texte est compact
-  const itemPt = nI <= 3 ? 34 : nI <= 5 ? 30 : nI <= 8 ? 26 : nI <= 10 ? 24 : 22, rowGap = nI <= 3 ? 34 : nI <= 5 ? 24 : nI <= 8 ? 14 : nI <= 10 ? 9 : 7, big = nI <= 3 ? 80 : nI <= 5 ? 72 : 64;
+  const sel = ctrlSelG(cfg, s), req = sel.filter(([k]) => cfg.required.includes(k));
+  const extra = [1, 2, 3].map(i => String(s["extra" + i] || "").trim().slice(0, 40)).filter(Boolean).map((t, i) => ["x" + (i + 1), t, t]);
+  const items = [...sel.filter(([k]) => !cfg.required.includes(k)), ...extra, ...req], nI = items.length;   // lignes ajoutées : juste avant « Contrôle qualité »
+  // plus il y a de lignes, plus le texte est compact (jusqu'à 14 lignes)
+  let itemPt = nI <= 3 ? 34 : nI <= 5 ? 30 : nI <= 8 ? 26 : nI <= 10 ? 24 : nI <= 11 ? 22 : nI <= 12 ? 21 : 19;
+  const rowGap = nI <= 3 ? 34 : nI <= 5 ? 24 : nI <= 8 ? 14 : nI <= 10 ? 9 : nI <= 11 ? 7 : nI <= 12 ? 6 : 4, big = nI <= 3 ? 80 : nI <= 5 ? 72 : nI <= 11 ? 64 : 56;
+  if (items.length) itemPt = Math.min(itemPt, ...items.map(([k, fr, en]) => fit(L(fr, en), itemPt, 330)));   // une ligne longue rapetisse la liste pour tenir dans la largeur
   const bigSz = fit(jobT, big, 520);                                         // # job : en grand
-  const midMax = nI <= 5 ? 44 : 40;                                          // client, projet, unité / sur : même grosseur
-  const midSz = Math.min(fit(client, midMax, 520), fit(proj, midMax, 520), fit(l3, midMax, 520));
+  const midMax = nI <= 5 ? 44 : nI <= 11 ? 40 : 34;                          // client, projet, unité / sur : même grosseur
+  const midSz = Math.min(fit(client, midMax, 520), fit(proj, midMax, 520), fit(N > 1 ? `${N}/${N}` : l3One, midMax, 520));
   const url = ctrlUrl(s), qr = qrSvg(url);
-  return `<div class="c-page">
+  const sheet = (l3, many) => `<div class="c-page${many ? " avoid" : ""}">
     <div class="c-head"><img class="i-logo" src="logo.svg" alt="">${qr ? `<div class="c-qr">${qr}<small>${v(url.replace("https://", ""))}</small></div>` : ""}</div>
     <div class="c-lines">
       <div class="c-client${ph(s.job)}" style="font-size:${bigSz}pt">${v(jobT.toUpperCase())}</div>
       <div class="c-l2${ph(s.customer)}" style="font-size:${midSz}pt">${v(client.toUpperCase())}</div>
       <div class="c-l2${ph(s.block)}" style="font-size:${midSz}pt">${v(proj.toUpperCase())}</div>
-      <div class="c-l3${ph(u || n)}" style="font-size:${midSz}pt">${v(l3.toUpperCase())}</div>
+      <div class="c-l3${ph(N > 1 || u || n)}" style="font-size:${midSz}pt">${v(l3.toUpperCase())}</div>
       ${items.length ? `<div class="c-list" style="font-size:${itemPt}pt;row-gap:${rowGap}px">${items.map(([k, fr, en]) => `<span class="c-lab">${v(L(fr, en))}</span><span class="c-box"></span><span class="c-init"><small>${L("Init.", "Init.")}</small><i></i></span>`).join("")}</div>` : ""}
     </div>
     <div class="i-foot"><span>${L("Date et heure d'impression :", "Printed on:")}</span> <b>${stamp}</b> <span class="i-ver">· ${v(verLabel(cfg.type))}${s.id ? ` · ${L("Réf.", "Ref.")} ${v(s.id)}` : ""}</span></div>
   </div>`;
+  return N > 1 ? Array.from({ length: N }, (_, i) => sheet(`${i + 1}/${N}`, true)).join("") : sheet(l3One, false);
 }
 const ctrlHtml = p => ctrlHtmlG(CTRL_SYS, p), ctrlPrint = s => ctrlPrintG(CTRL_SYS, s);
 const ctrlpHtml = p => ctrlHtmlG(CTRL_PUMP, p), ctrlpPrint = s => ctrlPrintG(CTRL_PUMP, s);
@@ -3775,8 +3799,8 @@ const VERSIONS = {
   vfd:     ["1.0", "2026-10-03"],
   ident:   ["1.3", "2026-10-17"],
   pump:    ["3.5", "2026-08-15"],
-  ctrl:    ["2.8", "2026-10-18"],
-  ctrlp:   ["1.2", "2026-10-18"],
+  ctrl:    ["3.0", "2026-10-22"],
+  ctrlp:   ["1.4", "2026-10-22"],
   sold:    ["1.4", "2026-10-22"]
 };
 
