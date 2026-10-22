@@ -489,6 +489,26 @@ table.r-tbl td{vertical-align:middle}
    sur une 2e page, même si le navigateur ou l'imprimante impose des marges. Les deux premières lignes sont des replis pour les anciens navigateurs. */
 .i-page{height:880px;height:calc(100vh - 18mm - 6px);height:min(985px,calc(100vh - 18mm - 6px));overflow:hidden;break-inside:avoid;page-break-after:avoid;display:flex;flex-direction:column;font-family:"Times New Roman",Times,serif}
 #print.capture .i-page{height:985px}
+/* formulaire d'identification - soudure : étiquette en paysage (bandeau foncé, QUOTE, description + quantité) */
+.s-page{height:700px;height:min(741px,calc(100vh - 18mm - 6px));overflow:hidden;break-inside:avoid;page-break-after:avoid;display:flex;flex-direction:column;font-family:Arial,Helvetica,sans-serif;font-weight:700}
+#print.capture .s-page{height:741px}
+.s-box{flex:1;min-height:0;display:flex;flex-direction:column;border:4px solid #555;margin-bottom:8px}
+/* bandeau foncé : logo à gauche, client - projet au centre, code QR à droite (chacun sur fond blanc) */
+.s-head{flex:0 0 auto;background:#444;color:#fff;display:grid;grid-template-columns:150pt 1fr 150pt;align-items:center;padding:8px 16px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.s-hl{justify-self:start;background:#fff;border-radius:8px;padding:6px 10px;line-height:0}
+.s-head .i-logo{height:54px;width:auto}
+.s-head .logo-inline.i-logo svg{height:54px;width:125px}
+.s-ht{text-align:center;line-height:1.1;padding:0 10px;font-weight:700}
+.s-ht.ph{color:#bdbdbd}
+.s-hr{justify-self:end}
+.s-head .c-qr svg{width:1.1in;height:1.1in;border-radius:4px;background:#fff}
+.s-head .c-qr small{color:#e2e2e2}
+.s-quote{flex:0 0 28%;border-bottom:4px solid #555;display:flex;align-items:center;justify-content:center;gap:20px;padding:0 24px}
+.s-ql{color:#666;font-size:54pt;line-height:1;white-space:nowrap}
+.s-qv{flex:0 1 auto;min-width:46%;text-align:center;color:#111;border-bottom:3px solid #555;line-height:1.1;padding:0 8px;min-height:1.2em}
+.s-qv.ph{color:#b5b5b5}
+.s-desc{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;color:#333;line-height:1.08;padding:0 24px;overflow-wrap:anywhere}
+.s-desc .ph{color:#b5b5b5}
 /* feuille de contrôle : grandes lettres grasses, centrées ; même hauteur adaptative que la feuille d'identification */
 .qrprev{display:flex;gap:14px;align-items:center;padding:12px 14px;border-top:1px solid var(--line)}
 .qrprev svg{width:110px;height:110px;flex:none;border-radius:4px}

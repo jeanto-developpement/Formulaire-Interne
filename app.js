@@ -271,7 +271,7 @@ function showHome() {
                   : `<span class="tag warn">${L("À imprimer ou envoyer", "To print or email")}</span>`}</div>
       <a class="btn" href="#/${r.type}/${r.id}">${L("Ouvrir", "Open")}</a></li>`;
   const list = reportsSorted();
-  const newForms = GROUPS.map(g => `<h3 class="grp">${esc(g.title)}</h3>${g.id === "internal" ? `<p class="grpnote">${L("Tous enregistrés sur Google Drive, sauf la feuille d'identification job et les feuilles des contrôles - système et pompe (courriel ou impression seulement).", "All saved to Google Drive, except the job identification sheet and the control sheets - system and pump (email or print only).")}</p>` : ""}
+  const newForms = GROUPS.map(g => `<h3 class="grp">${esc(g.title)}</h3>${g.id === "internal" ? `<p class="grpnote">${L("Tous enregistrés sur Google Drive, sauf la feuille d'identification job, les feuilles des contrôles (système et pompe) et le formulaire identification - soudure (courriel ou impression seulement).", "All saved to Google Drive, except the job identification sheet, the control sheets (system and pump) and the welding identification form (email or print only).")}</p>` : ""}
     <div class="cards">${Object.entries(FORMS).filter(([, d]) => d.group === g.id).map(card).join("")}</div>`).join("");
   const saved = list.length
     ? GROUPS.map(g => {

@@ -3718,6 +3718,51 @@ function ctrlPrintG(cfg, s) {
 const ctrlHtml = p => ctrlHtmlG(CTRL_SYS, p), ctrlPrint = s => ctrlPrintG(CTRL_SYS, s);
 const ctrlpHtml = p => ctrlHtmlG(CTRL_PUMP, p), ctrlpPrint = s => ctrlPrintG(CTRL_PUMP, s);
 
+/* =====================================================================
+   10. FORMULAIRE D'IDENTIFICATION - SOUDURE (formulaire interne, page Lettre en paysage)
+   Étiquette : bandeau foncé (client - projet), QUOTE, description en grand et quantité.
+   ===================================================================== */
+function soldHtml(p) {
+  return `
+  <section class="sec" aria-label="${L("Formulaire identification - soudure", "Identification form - welding")}">
+    <h2 class="bar">${L("FORMULAIRE IDENTIFICATION - SOUDURE", "IDENTIFICATION FORM - WELDING")}</h2>
+    <div class="grid2">
+      ${fld(p, "customer", L("Client (ex. SVL)", "Customer (e.g. SVL)"), { auto: "organization" })}${fld(p, "project", L("Projet (ex. PECOS)", "Project (e.g. PECOS)"))}
+      ${fld(p, "quote", "Quote")}${fld(p, "desc", L("Pièces (ex. PUMP SPOOLS #2)", "Parts (e.g. PUMP SPOOLS #2)"))}
+      ${fld(p, "qty", L("Quantité (QTY)", "Quantity (QTY)"))}
+    </div>
+    <div class="qrprev" data-qr></div>
+    <p class="mintro" style="padding:10px 14px;margin:0;border-top:1px solid var(--line)">${L(
+      "La feuille s'imprime en paysage, en grand format : bandeau foncé (client - projet), QUOTE, puis les pièces et la quantité. Un champ laissé vide s'imprime en gris clair (à écrire à la main). La date, l'heure et la version s'ajoutent au bas de la feuille.",
+      "The sheet prints in landscape, in large type: dark banner (customer - project), QUOTE, then the parts and the quantity. An empty field prints in light grey (to write by hand). The date, time and version are added at the bottom of the sheet.")}</p>
+  </section>`;
+}
+function soldPrint(s) {
+  const stamp = stampNow();
+  // taille du texte calculée d'après sa largeur réelle (Arial gras) pour que chaque ligne tienne
+  const cx = soldPrint.cx || (soldPrint.cx = document.createElement("canvas").getContext("2d"));
+  const fit = (txt, max, avail) => { cx.font = '700 100px Arial, Helvetica, sans-serif'; const w1 = Math.max(0.01, cx.measureText(txt || " ").width / 100); return Math.floor(Math.max(16, Math.min(max, avail / w1))); };
+  const t = x => String(x || "").trim();
+  const banner = [t(s.customer), t(s.project)].filter(Boolean).join(" - ");                 // client - projet
+  const hdr = banner.toUpperCase() || L("CLIENT - PROJET", "CUSTOMER - PROJECT"), quote = t(s.quote);
+  const desc = t(s.desc).toUpperCase() || L("PIÈCES", "PARTS"), qtyTxt = "QTY :" + t(s.qty).toUpperCase();
+  let big = Math.min(fit(desc, 96, 640), fit(qtyTxt, 96, 640));                // pièces et quantité : même grosseur
+  if (big < 60) { const b2 = Math.min(fit(desc, 70, 640 * 1.7), fit(qtyTxt, 70, 640)); if (b2 > big) big = b2; }   // description longue : elle passe sur 2 lignes, en plus gros
+  const qurl = identUrl(s), qr = qrSvg(qurl);                                    // même code QR que la feuille d'identification job : #Quote
+  return `<div class="s-page">
+    <div class="s-box">
+      <div class="s-head">
+        <div class="s-hl"><img class="i-logo" src="logo.svg" alt=""></div>
+        <div class="s-ht${banner ? "" : " ph"}" style="font-size:${fit(hdr, 56, 370)}pt">${v(hdr)}</div>
+        <div class="s-hr">${qr ? `<div class="c-qr">${qr}<small>${v(qurl.replace("https://", ""))}</small></div>` : ""}</div>
+      </div>
+      <div class="s-quote"><span class="s-ql">QUOTE :</span><span class="s-qv${quote ? "" : " ph"}" style="font-size:${fit(quote, 54, 340)}pt">${v(quote)}</span></div>
+      <div class="s-desc" style="font-size:${big}pt"><div class="${t(s.desc) ? "" : "ph"}">${v(desc)}</div><div class="${t(s.qty) ? "" : "ph"}">${v(qtyTxt)}</div></div>
+    </div>
+    <div class="i-foot"><span>${L("Date et heure d'impression :", "Printed on:")}</span> <b>${stamp}</b> <span class="i-ver">· ${v(verLabel("sold"))}${s.id ? ` · ${L("Réf.", "Ref.")} ${v(s.id)}` : ""}</span></div>
+  </div>`;
+}
+
 /* ---------- versions des formulaires ----------
    À AUGMENTER à chaque modification d'un formulaire (champs, libellés, mise en page) : le numéro s'imprime sur chaque PDF.
    Format : [version, date de révision]. */
@@ -3731,7 +3776,8 @@ const VERSIONS = {
   ident:   ["1.3", "2026-10-17"],
   pump:    ["3.5", "2026-08-15"],
   ctrl:    ["2.8", "2026-10-18"],
-  ctrlp:   ["1.2", "2026-10-18"]
+  ctrlp:   ["1.2", "2026-10-18"],
+  sold:    ["1.4", "2026-10-22"]
 };
 
 /* ---------- registre ---------- */
@@ -3805,6 +3851,16 @@ const FORMS = {
     blank: () => ctrlBlank(CTRL_PUMP),
     label: s => [s.customer, s.job && "Job " + s.job, s.block].filter(Boolean).join(" — ")
   },
+  sold: {
+    group: "internal", folder: "Identification - soudure", fileTag: "Identification-Soudure", landscape: true,
+    get title() { return L("Formulaire identification - soudure", "Identification form - welding"); },
+    get short() { return L("Identification - soudure", "Identification - welding"); },
+    get desc() { return L("Étiquette en grand (paysage) : client - projet, quote, pièces et quantité.", "Large label (landscape): customer - project, quote, parts and quantity."); },
+    html: soldHtml, refresh: identRefresh, print: soldPrint,
+    fileWho: s => [s.customer, s.project].filter(Boolean).join(" "),                 // nom de fichier : SVL-PECOS
+    blank: () => ({}),
+    label: s => [[s.customer, s.project].filter(Boolean).join(" - "), s.quote && "Quote " + s.quote, s.desc].filter(Boolean).join(" — ")
+  },
   req: {
     group: "internal", folder: "Réquisitions d'achat", fileTag: "Requisition",
     get title() { return L("Réquisition d'achat", "Purchase requisition"); },
@@ -3830,6 +3886,7 @@ Object.entries(FORMS).forEach(([t, d]) => {
 });
 FORMS.ident.ownStamp = true;
 FORMS.ctrl.ownStamp = true;
+FORMS.sold.ownStamp = true;                  // le formulaire de soudure a sa propre ligne date / heure / version
 FORMS.ctrlp.ownStamp = true;                 // idem : la feuille des contrôles - pompe a sa propre ligne date / heure / version                  // la feuille de contrôle a sa propre ligne date / heure / version
 FORMS.pump.bilingualPdf = true;              // le PDF du Test de pompe est toujours en français ET en anglais                   // la feuille a déjà sa propre ligne date / heure / version
 
@@ -3843,7 +3900,7 @@ function contentKey(s) {
 
 /* formulaires internes : jamais rangés sur Google Drive (courriel ou impression seulement) */
 /* tous les formulaires sont enregistrés sur Google Drive, SAUF la feuille d'identification job et la feuille des contrôles - système (courriel ou impression seulement) */
-const NO_DRIVE = ["ident", "ctrl", "ctrlp"];           // feuille d'identification job + feuilles des contrôles (système et pompe)
+const NO_DRIVE = ["ident", "ctrl", "ctrlp", "sold"];     // feuille d'identification job + feuilles des contrôles (système et pompe) + formulaire identification - soudure
 const storesOnDrive = t => !!FORMS[t] && !NO_DRIVE.includes(t);
 
 window.Flo = { FORMS, esc, times, fmt, L, contentKey, stampText, stampNow, verLabel, storesOnDrive, pumpCalc, bilingual, setLang: l => { LANG = l === "en" ? "en" : "fr"; }, getLang: () => LANG };

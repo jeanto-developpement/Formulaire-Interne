@@ -177,10 +177,10 @@ async function makePdf(def, state) {
 /* ======================================================================
    Noms de fichiers
    ====================================================================== */
-const clean = s => String(s || "").trim().replace(/[\\/:*?"<>|#%&{}$!'`@=+]/g, "").replace(/\s+/g, "-").slice(0, 40);
+const clean = s => String(s || "").trim().replace(/[\\/:*?"<>|#%&{}$!'`@=+]/g, "").replace(/\s+/g, "-").replace(/-{2,}/g, "-").replace(/^-|-$/g, "").slice(0, 40);        // « SVL - PECOS » → SVL-PECOS (pas de tirets en série)
 function fileBase(type, s) {
   const def = FORMS[type];
-  const parts = [s.date || new Date().toISOString().slice(0, 10), clean(def.fileTag), clean(s.customer || s.project || ""), clean(s.job || s.quote || ""), String(s.id || "").slice(-6)];
+  const parts = [s.date || new Date().toISOString().slice(0, 10), clean(def.fileTag), clean(def.fileWho ? def.fileWho(s) : (s.customer || s.project || "")), clean(s.job || s.quote || ""), String(s.id || "").slice(-6)];
   return parts.filter(Boolean).join("_");
 }
 
