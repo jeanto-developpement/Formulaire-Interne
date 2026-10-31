@@ -3198,6 +3198,8 @@ function identHtml(p) {
       ${fld(p, "quote", "#Quote")}${fld(p, "customer", L("Client", "Customer"), { auto: "organization" })}
       ${fld(p, "project", L("Projet", "Project"))}${fld(p, "job", L("# Job", "# Job"))}
     </div>
+    <div class="allbox probbox"><label class="chk"><input type="checkbox" data-k="problem"><span>⚠ ${L("Indiquer un problème", "Flag a problem")}</span></label></div>
+    <div class="grid2 probtxt">${fld(p, "problemTxt", L("Description du problème (facultatif, imprimée si la case est cochée)", "Problem description (optional, printed when the box is ticked)"), { max: 120 })}</div>
     <div class="qrprev" data-qr></div>
     <p class="mintro" style="padding:10px 14px;margin:0;border-top:1px solid var(--line)">${L(
       "La feuille s'imprime en grand format. Un champ laissé vide s'imprime en gris clair (à remplir à la main). La date et l'heure d'impression s'ajoutent automatiquement au bas de la feuille.",
@@ -3215,13 +3217,19 @@ function identPrint(s) {
     const cx = identPrint.cx || (identPrint.cx = document.createElement("canvas").getContext("2d"));
     cx.font = '100px "Times New Roman", Times, serif';
     const w1 = Math.max(0.01, cx.measureText(txt).width / 100);            // largeur du texte à 1 px
-    const fs = Math.floor(Math.max(14, Math.min(80, 500 / w1)));           // 500 pt de large disponibles (≈ 670 px)
+    const fs = Math.floor(Math.max(14, Math.min(s.problem ? 66 : 80, 500 / w1)));   // 500 pt de large disponibles (≈ 670 px) ; un peu plus petit si un problème est signalé
     return `<div class="i-line${t ? "" : " ph"}" style="font-size:${fs}pt">${v(txt)}</div>`;
   };
   const qurl = identUrl(s), qr = qrSvg(qurl);                        // code QR vers la soumission : #Quote
-  return `<div class="i-page">
+  // problème signalé : bandeau rouge « ⚠ PROBLÈME » sous le logo, description dans un cadre rouge en bas
+  const prob = !!s.problem, pTxt = String(s.problemTxt || "").trim().slice(0, 120);
+  let pSize = 34;
+  if (pTxt) { const cx = identPrint.cx2 || (identPrint.cx2 = document.createElement("canvas").getContext("2d")); cx.font = '700 100px Arial, Helvetica, sans-serif'; const w1 = Math.max(0.01, cx.measureText(pTxt).width / 100); pSize = Math.floor(Math.max(16, Math.min(34, 500 * 3 / w1))); }
+  return `<div class="i-page${prob ? " has-prob" : ""}">
     <div class="c-head"><img class="i-logo" src="logo.svg" alt="">${qr ? `<div class="c-qr">${qr}<small>${v(qurl.replace("https://", ""))}</small></div>` : ""}</div>
+    ${prob ? `<div class="i-prob">⚠ ${L("PROBLÈME", "PROBLEM")}</div>` : ""}
     <div class="i-lines">${line(s.quote, "#Quote")}${line(s.customer, L("Client", "Customer"))}${line(s.project, L("Projet", "Project"))}${line(s.job, "# Job")}</div>
+    ${prob && pTxt ? `<div class="i-probtxt" style="font-size:${pSize}pt">${v(pTxt)}</div>` : ""}
     <div class="i-foot"><span>${L("Date et heure d'impression :", "Printed on:")}</span> <b>${stamp}</b> <span class="i-ver">· ${v(verLabel("ident"))}</span></div>
   </div>`;
 }
@@ -3797,11 +3805,11 @@ const VERSIONS = {
   est:     ["1.0", "2026-10-03"],
   req:     ["1.0", "2026-10-03"],
   vfd:     ["1.0", "2026-10-03"],
-  ident:   ["1.3", "2026-10-17"],
+  ident:   ["1.4", "2026-10-31"],
   pump:    ["3.5", "2026-08-15"],
   ctrl:    ["3.0", "2026-10-22"],
   ctrlp:   ["1.4", "2026-10-22"],
-  sold:    ["1.4", "2026-10-22"]
+  sold:    ["1.6", "2026-10-22"]
 };
 
 /* ---------- registre ---------- */
@@ -3846,7 +3854,7 @@ const FORMS = {
     get desc() { return L("Grande feuille #Quote, client, projet, # Job avec date et heure d'impression.", "Large sheet: #Quote, customer, project, # Job, with print date and time."); },
     html: identHtml, refresh: identRefresh, print: identPrint,
     blank: () => ({}),
-    label: s => [s.customer || s.project, s.job && "Job " + s.job].filter(Boolean).join(" — ")
+    label: s => [s.problem ? "⚠ " + L("Problème", "Problem") : "", s.customer || s.project, s.job && "Job " + s.job].filter(Boolean).join(" — ")
   },
   pump: {
     group: "internal", folder: "Tests de pompe", fileTag: "Test-Pompe",
