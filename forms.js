@@ -3664,6 +3664,9 @@ const ctrlSelG = (cfg, s) => { const any = cfg.items.some(([k]) => ("opt_" + k) 
 const ctrlBlank = cfg => Object.fromEntries(cfg.items.map(([k]) => ["opt_" + k, false]));
 // nombre de feuilles à imprimer : 1, ou « Sur » (2 à 99) si « Imprimer toutes les feuilles » est coché (ex. 1 sur 5 → 1/5, 2/5, … 5/5)
 const ctrlCount = s => { const n = parseInt(String(s.units || "").replace(/\D/g, ""), 10); return s.allSheets && n >= 2 && n <= 99 ? n : 1; };
+// option « problème » à l'écran (feuilles des contrôles, soudure) — même présentation que la feuille d'identification job
+const probUi = p => `<div class="allbox probbox"><label class="chk"><input type="checkbox" data-k="problem"><span>⚠ ${L("Indiquer un problème", "Flag a problem")}</span></label></div>
+    <div class="grid2 probtxt">${fld(p, "problemTxt", L("Description du problème (facultatif, imprimée si la case est cochée)", "Problem description (optional, printed when the box is ticked)"), { max: 120 })}</div>`;
 function ctrlHtmlG(cfg, p) {
   return `
   <section class="sec" aria-label="${L(cfg.titleFr, cfg.titleEn)}">
@@ -3675,6 +3678,7 @@ function ctrlHtmlG(cfg, p) {
     </div>
     <div class="allbox"><label class="chk"><input type="checkbox" data-k="allSheets"><span>${L("Imprimer toutes les feuilles (de 1 à « Sur »)", "Print all the sheets (from 1 to “Of”)")}</span></label></div>
     <p class="mintro" style="padding:4px 14px 12px;margin:0" data-allhint></p>
+    ${probUi(p)}
     <div class="qrprev" data-qr></div>
   </section>
   <section class="sec" aria-label="${L("Liste de contrôle", "Checklist")}">
@@ -3725,17 +3729,22 @@ function ctrlPrintG(cfg, s) {
   const ph = (val, txt) => val ? "" : " ph";
   const sel = ctrlSelG(cfg, s), req = sel.filter(([k]) => cfg.required.includes(k));
   const extra = [1, 2, 3].map(i => String(s["extra" + i] || "").trim().slice(0, 40)).filter(Boolean).map((t, i) => ["x" + (i + 1), t, t]);
-  const items = [...sel.filter(([k]) => !cfg.required.includes(k)), ...extra, ...req], nI = items.length;   // lignes ajoutées : juste avant « Contrôle qualité »
+  const items = [...sel.filter(([k]) => !cfg.required.includes(k)), ...extra, ...req], nI = items.length;
+  // problème signalé : bandeau rouge sous le logo et description dans un cadre rouge ; la place qu'ils prennent compte comme des lignes de plus
+  const prob = !!s.problem, pTxt = String(s.problemTxt || "").trim().slice(0, 120), nE = nI + (prob ? (pTxt ? 4 : 2) : 0);
+  let pSize = 30;
+  if (pTxt) { const cy = ctrlPrintG.cy || (ctrlPrintG.cy = document.createElement("canvas").getContext("2d")); cy.font = '700 100px Arial, Helvetica, sans-serif'; pSize = Math.floor(Math.max(14, Math.min(nE > 16 ? 22 : 30, 500 * 3 / Math.max(0.01, cy.measureText(pTxt).width / 100)))); }   // lignes ajoutées : juste avant « Contrôle qualité »
   // plus il y a de lignes, plus le texte est compact (jusqu'à 14 lignes)
-  let itemPt = nI <= 3 ? 34 : nI <= 5 ? 30 : nI <= 8 ? 26 : nI <= 10 ? 24 : nI <= 11 ? 22 : nI <= 12 ? 21 : 19;
-  const rowGap = nI <= 3 ? 34 : nI <= 5 ? 24 : nI <= 8 ? 14 : nI <= 10 ? 9 : nI <= 11 ? 7 : nI <= 12 ? 6 : 4, big = nI <= 3 ? 80 : nI <= 5 ? 72 : nI <= 11 ? 64 : 56;
+  let itemPt = nE <= 3 ? 34 : nE <= 5 ? 30 : nE <= 8 ? 26 : nE <= 10 ? 24 : nE <= 11 ? 22 : nE <= 12 ? 21 : nE <= 14 ? 19 : nE <= 16 ? 17 : 15;
+  const rowGap = nE <= 3 ? 34 : nE <= 5 ? 24 : nE <= 8 ? 14 : nE <= 10 ? 9 : nE <= 11 ? 7 : nE <= 12 ? 6 : nE <= 14 ? 4 : nE <= 16 ? 2 : 1, big = nE <= 3 ? 80 : nE <= 5 ? 72 : nE <= 11 ? 64 : nE <= 14 ? 56 : nE <= 16 ? 48 : 42;
   if (items.length) itemPt = Math.min(itemPt, ...items.map(([k, fr, en]) => fit(L(fr, en), itemPt, 330)));   // une ligne longue rapetisse la liste pour tenir dans la largeur
   const bigSz = fit(jobT, big, 520);                                         // # job : en grand
-  const midMax = nI <= 5 ? 44 : nI <= 11 ? 40 : 34;                          // client, projet, unité / sur : même grosseur
+  const midMax = nE <= 5 ? 44 : nE <= 11 ? 40 : nE <= 14 ? 34 : nE <= 16 ? 30 : 26;                          // client, projet, unité / sur : même grosseur
   const midSz = Math.min(fit(client, midMax, 520), fit(proj, midMax, 520), fit(N > 1 ? `${N}/${N}` : l3One, midMax, 520));
   const url = ctrlUrl(s), qr = qrSvg(url);
   const sheet = (l3, many) => `<div class="c-page${many ? " avoid" : ""}">
     <div class="c-head"><img class="i-logo" src="logo.svg" alt="">${qr ? `<div class="c-qr">${qr}<small>${v(url.replace("https://", ""))}</small></div>` : ""}</div>
+    ${prob ? `<div class="i-prob${nE > 16 ? " dense" : ""}">⚠ ${L("PROBLÈME", "PROBLEM")}</div>` : ""}
     <div class="c-lines">
       <div class="c-client${ph(s.job)}" style="font-size:${bigSz}pt">${v(jobT.toUpperCase())}</div>
       <div class="c-l2${ph(s.customer)}" style="font-size:${midSz}pt">${v(client.toUpperCase())}</div>
@@ -3743,6 +3752,7 @@ function ctrlPrintG(cfg, s) {
       <div class="c-l3${ph(N > 1 || u || n)}" style="font-size:${midSz}pt">${v(l3.toUpperCase())}</div>
       ${items.length ? `<div class="c-list" style="font-size:${itemPt}pt;row-gap:${rowGap}px">${items.map(([k, fr, en]) => `<span class="c-lab">${v(L(fr, en))}</span><span class="c-box"></span><span class="c-init"><small>${L("Init.", "Init.")}</small><i></i></span>`).join("")}</div>` : ""}
     </div>
+    ${prob && pTxt ? `<div class="i-probtxt" style="font-size:${pSize}pt">${v(pTxt)}</div>` : ""}
     <div class="i-foot"><span>${L("Date et heure d'impression :", "Printed on:")}</span> <b>${stamp}</b> <span class="i-ver">· ${v(verLabel(cfg.type))}${s.id ? ` · ${L("Réf.", "Ref.")} ${v(s.id)}` : ""}</span></div>
   </div>`;
   return N > 1 ? Array.from({ length: N }, (_, i) => sheet(`${i + 1}/${N}`, true)).join("") : sheet(l3One, false);
@@ -3763,6 +3773,7 @@ function soldHtml(p) {
       ${fld(p, "quote", "Quote")}${fld(p, "desc", L("Pièces (ex. PUMP SPOOLS #2)", "Parts (e.g. PUMP SPOOLS #2)"))}
       ${fld(p, "qty", L("Quantité (QTY)", "Quantity (QTY)"))}
     </div>
+    ${probUi(p)}
     <div class="qrprev" data-qr></div>
     <p class="mintro" style="padding:10px 14px;margin:0;border-top:1px solid var(--line)">${L(
       "La feuille s'imprime en paysage, en grand format : bandeau foncé (client - projet), QUOTE, puis les pièces et la quantité. Un champ laissé vide s'imprime en gris clair (à écrire à la main). La date, l'heure et la version s'ajoutent au bas de la feuille.",
@@ -3778,16 +3789,20 @@ function soldPrint(s) {
   const banner = [t(s.customer), t(s.project)].filter(Boolean).join(" - ");                 // client - projet
   const hdr = banner.toUpperCase() || L("CLIENT - PROJET", "CUSTOMER - PROJECT"), quote = t(s.quote);
   const desc = t(s.desc).toUpperCase() || L("PIÈCES", "PARTS"), qtyTxt = "QTY :" + t(s.qty).toUpperCase();
-  let big = Math.min(fit(desc, 96, 640), fit(qtyTxt, 96, 640));                // pièces et quantité : même grosseur
-  if (big < 60) { const b2 = Math.min(fit(desc, 70, 640 * 1.7), fit(qtyTxt, 70, 640)); if (b2 > big) big = b2; }   // description longue : elle passe sur 2 lignes, en plus gros
+  // problème signalé : barre rouge « ⚠ PROBLÈME : description » sous le bandeau ; les pièces rapetissent un peu pour faire la place
+  const prob = !!s.problem, pTxt = t(s.problemTxt).slice(0, 120), pLine = "⚠ " + L("PROBLÈME", "PROBLEM") + (pTxt ? " : " + pTxt : "");
+  const pSz = fit(pLine, 34, 640 * 1.9);
+  let big = Math.min(fit(desc, prob ? 80 : 96, 640), fit(qtyTxt, prob ? 80 : 96, 640));                // pièces et quantité : même grosseur
+  if (big < 60) { const b2 = Math.min(fit(desc, prob ? 56 : 70, 640 * 1.7), fit(qtyTxt, prob ? 56 : 70, 640)); if (b2 > big) big = b2; }   // description longue : elle passe sur 2 lignes, en plus gros
   const qurl = identUrl(s), qr = qrSvg(qurl);                                    // même code QR que la feuille d'identification job : #Quote
   return `<div class="s-page">
-    <div class="s-box">
+    <div class="s-box${prob ? " has-prob" : ""}">
       <div class="s-head">
         <div class="s-hl"><img class="i-logo" src="logo.svg" alt=""></div>
         <div class="s-ht${banner ? "" : " ph"}" style="font-size:${fit(hdr, 56, 370)}pt">${v(hdr)}</div>
         <div class="s-hr">${qr ? `<div class="c-qr">${qr}<small>${v(qurl.replace("https://", ""))}</small></div>` : ""}</div>
       </div>
+      ${prob ? `<div class="s-prob" style="font-size:${pSz}pt">${v(pLine)}</div>` : ""}
       <div class="s-quote"><span class="s-ql">QUOTE :</span><span class="s-qv${quote ? "" : " ph"}" style="font-size:${fit(quote, 54, 340)}pt">${v(quote)}</span></div>
       <div class="s-desc" style="font-size:${big}pt"><div class="${t(s.desc) ? "" : "ph"}">${v(desc)}</div><div class="${t(s.qty) ? "" : "ph"}">${v(qtyTxt)}</div></div>
     </div>
@@ -3807,9 +3822,9 @@ const VERSIONS = {
   vfd:     ["1.0", "2026-10-03"],
   ident:   ["1.4", "2026-10-31"],
   pump:    ["3.5", "2026-08-15"],
-  ctrl:    ["3.0", "2026-10-22"],
-  ctrlp:   ["1.4", "2026-10-22"],
-  sold:    ["1.6", "2026-10-22"]
+  ctrl:    ["3.1", "2026-10-31"],
+  ctrlp:   ["1.5", "2026-10-31"],
+  sold:    ["1.7", "2026-10-31"]
 };
 
 /* ---------- registre ---------- */
@@ -3872,7 +3887,7 @@ const FORMS = {
     get desc() { return L("Grande feuille : # job, client, projet, unité, et lignes de contrôle avec initiales.", "Large sheet: # job, customer, project, unit, and checklist lines with initials."); },
     html: ctrlHtml, refresh: ctrlRefresh, print: ctrlPrint,
     blank: () => ctrlBlank(CTRL_SYS),
-    label: s => [s.customer, s.job && "Job " + s.job, s.block].filter(Boolean).join(" — ")
+    label: s => [s.problem ? "⚠ " + L("Problème", "Problem") : "", s.customer, s.job && "Job " + s.job, s.block].filter(Boolean).join(" — ")
   },
   ctrlp: {
     group: "internal", folder: "Feuilles des contrôles - Pompe", fileTag: "Controle-Pompe",
@@ -3881,7 +3896,7 @@ const FORMS = {
     get desc() { return L("Grande feuille : # job, client, projet, unité, code QR et contrôle de la pompe (assemblage, alignement, tester, drive…).", "Large sheet: # job, customer, project, unit, QR code and pump check (assembly, alignment, testing, drive…)."); },
     html: ctrlpHtml, refresh: ctrlRefresh, print: ctrlpPrint,
     blank: () => ctrlBlank(CTRL_PUMP),
-    label: s => [s.customer, s.job && "Job " + s.job, s.block].filter(Boolean).join(" — ")
+    label: s => [s.problem ? "⚠ " + L("Problème", "Problem") : "", s.customer, s.job && "Job " + s.job, s.block].filter(Boolean).join(" — ")
   },
   sold: {
     group: "internal", folder: "Identification - soudure", fileTag: "Identification-Soudure", landscape: true,
@@ -3891,7 +3906,7 @@ const FORMS = {
     html: soldHtml, refresh: identRefresh, print: soldPrint,
     fileWho: s => [s.customer, s.project].filter(Boolean).join(" "),                 // nom de fichier : SVL-PECOS
     blank: () => ({}),
-    label: s => [[s.customer, s.project].filter(Boolean).join(" - "), s.quote && "Quote " + s.quote, s.desc].filter(Boolean).join(" — ")
+    label: s => [s.problem ? "⚠ " + L("Problème", "Problem") : "", [s.customer, s.project].filter(Boolean).join(" - "), s.quote && "Quote " + s.quote, s.desc].filter(Boolean).join(" — ")
   },
   req: {
     group: "internal", folder: "Réquisitions d'achat", fileTag: "Requisition",

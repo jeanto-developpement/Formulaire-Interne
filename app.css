@@ -549,6 +549,14 @@ table.r-tbl td{vertical-align:middle}
 .i-probtxt{border:4px solid #c62828;border-radius:6px;padding:8px 14px;margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-weight:700;color:#111;text-align:center;line-height:1.2;overflow-wrap:anywhere}
 .probbox .chk span{color:#c62828}
 .probtxt{padding-top:0}
+.c-page .i-prob{font-size:40pt;margin:6px 0 0}
+.c-page .i-probtxt{margin:4px 0 8px}
+.c-page .i-prob.dense{font-size:30pt;padding:3px 10px;margin-top:4px}
+.c-page:has(.i-prob.dense) .i-probtxt{padding:4px 10px;margin:2px 0 6px}
+/* formulaire de soudure : barre rouge « PROBLÈME » sous le bandeau */
+.s-prob{background:#c62828;color:#fff;font-weight:700;text-align:center;line-height:1.15;padding:6px 16px;border-bottom:4px solid #555;overflow-wrap:anywhere;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.s-box.has-prob .s-quote{flex-basis:22%}
+.s-box.has-prob .s-ql{font-size:44pt}
 .i-ver{margin-left:4px}
 .p-stamp{font:7.5pt Arial,Helvetica,sans-serif;color:#555;text-align:right;margin:0 0 4px}
 /* ---------- test de pompe (feuille imprimée / PDF) ---------- */
