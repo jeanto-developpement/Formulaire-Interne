@@ -3749,7 +3749,7 @@ function ctrlPrintG(cfg, s) {
       <div class="c-client${ph(s.job)}" style="font-size:${bigSz}pt">${v(jobT.toUpperCase())}</div>
       <div class="c-l2${ph(s.customer)}" style="font-size:${midSz}pt">${v(client.toUpperCase())}</div>
       <div class="c-l2${ph(s.block)}" style="font-size:${midSz}pt">${v(proj.toUpperCase())}</div>
-      <div class="c-l3${ph(N > 1 || u || n)}" style="font-size:${midSz}pt">${v(l3.toUpperCase())}</div>
+      ${N > 1 || u || n ? `<div class="c-l3" style="font-size:${midSz}pt">${v(l3.toUpperCase())}</div>` : ""}
       ${items.length ? `<div class="c-list" style="font-size:${itemPt}pt;row-gap:${rowGap}px">${items.map(([k, fr, en]) => `<span class="c-lab">${v(L(fr, en))}</span><span class="c-box"></span><span class="c-init"><small>${L("Init.", "Init.")}</small><i></i></span>`).join("")}</div>` : ""}
     </div>
     ${prob && pTxt ? `<div class="i-probtxt" style="font-size:${pSize}pt">${v(pTxt)}</div>` : ""}
@@ -3822,8 +3822,8 @@ const VERSIONS = {
   vfd:     ["1.0", "2026-10-03"],
   ident:   ["1.4", "2026-10-31"],
   pump:    ["3.5", "2026-08-15"],
-  ctrl:    ["3.1", "2026-10-31"],
-  ctrlp:   ["1.5", "2026-10-31"],
+  ctrl:    ["3.2", "2026-10-31"],
+  ctrlp:   ["1.6", "2026-10-31"],
   sold:    ["1.7", "2026-10-31"]
 };
 
