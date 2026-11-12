@@ -232,6 +232,22 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
 .fcard.internal{border-left-color:#0b3d6e}
 :root[data-theme="dark"] .fcard.internal{border-left-color:#5db4ff}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fcard.internal{border-left-color:#5db4ff}}
+/* accueil : rapport de service, mises en marche et estimation sur fond rose (la barre de gauche garde sa couleur) */
+.fcard.service,.fcard.sub,.fcard.sur,.fcard.est{background:#fde4ee;border-top-color:#f2c2d4;border-right-color:#f2c2d4;border-bottom-color:#f2c2d4}
+:root[data-theme="dark"] .fcard.service,:root[data-theme="dark"] .fcard.sub,:root[data-theme="dark"] .fcard.sur,:root[data-theme="dark"] .fcard.est{background:#3b2230;border-top-color:#6b3a52;border-right-color:#6b3a52;border-bottom-color:#6b3a52}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fcard.service,:root:not([data-theme="light"]) .fcard.sub,:root:not([data-theme="light"]) .fcard.sur,:root:not([data-theme="light"]) .fcard.est{background:#3b2230;border-top-color:#6b3a52;border-right-color:#6b3a52;border-bottom-color:#6b3a52}}
+/* accueil : feuille des contrôles - système sur fond bleu */
+.fcard.ctrl{background:#dcebfb;border-top-color:#b6d3f2;border-right-color:#b6d3f2;border-bottom-color:#b6d3f2}
+:root[data-theme="dark"] .fcard.ctrl{background:#14304d;border-top-color:#2c5683;border-right-color:#2c5683;border-bottom-color:#2c5683}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fcard.ctrl{background:#14304d;border-top-color:#2c5683;border-right-color:#2c5683;border-bottom-color:#2c5683}}
+/* accueil : feuille des contrôles - pompe sur fond vert */
+.fcard.ctrlp{background:#dff3e3;border-top-color:#b5dfbf;border-right-color:#b5dfbf;border-bottom-color:#b5dfbf}
+:root[data-theme="dark"] .fcard.ctrlp{background:#173a24;border-top-color:#2f6a43;border-right-color:#2f6a43;border-bottom-color:#2f6a43}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fcard.ctrlp{background:#173a24;border-top-color:#2f6a43;border-right-color:#2f6a43;border-bottom-color:#2f6a43}}
+/* accueil : formulaire identification - soudure sur fond jaune */
+.fcard.sold{background:#fff6c7;border-top-color:#ecdc8a;border-right-color:#ecdc8a;border-bottom-color:#ecdc8a}
+:root[data-theme="dark"] .fcard.sold{background:#3a3214;border-top-color:#6d5f25;border-right-color:#6d5f25;border-bottom-color:#6d5f25}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fcard.sold{background:#3a3214;border-top-color:#6d5f25;border-right-color:#6d5f25;border-bottom-color:#6d5f25}}
 .fcard .badge{align-self:flex-start;margin-top:auto;font-style:normal;font-size:.75rem;font-weight:600;background:var(--blueSoft);color:var(--blue);padding:3px 10px;border-radius:99px}
 .histbox{background:var(--paper);border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .hubtools{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
