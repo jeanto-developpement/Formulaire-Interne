@@ -549,6 +549,27 @@ table.r-tbl td{vertical-align:middle}
 .i-probtxt{border:4px solid #c62828;border-radius:6px;padding:8px 14px;margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-weight:700;color:#111;text-align:center;line-height:1.2;overflow-wrap:anywhere}
 .probbox .chk span{color:#c62828}
 .probtxt{padding-top:0}
+/* transfert de shift — écran */
+.sh-rows{padding:10px 14px 14px}
+.sh-rh,.sh-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:8px}
+.sh-rh{font-weight:700;font-size:.85rem;color:var(--muted);padding:0 2px 6px}
+.sh-row{margin-bottom:8px}
+.sh-row input{width:100%;min-width:0;font-size:16px;min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--text);box-sizing:border-box}
+/* transfert de shift — impression (comme le document Word) */
+.sh-page{font-family:Arial,Helvetica,sans-serif;color:#111}
+.sh-head{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #1f4e79;padding-bottom:8px;margin-bottom:16px}
+.sh-head img.sh-logo{height:56px;width:auto}
+.sh-head .logo-inline.sh-logo svg{height:56px;width:129px}
+.sh-title{font-size:22pt;font-weight:700;color:#1f4e79;letter-spacing:.01em}
+.sh-info,.sh-tbl{width:100%;border-collapse:collapse;table-layout:fixed}
+.sh-info th,.sh-info td,.sh-tbl td{border:1px solid #777;padding:4px 8px;font-size:11pt;height:30px;box-sizing:border-box;vertical-align:middle;overflow-wrap:anywhere}
+.sh-info th{background:#dbe5f1;text-align:left;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.sh-tbl th{background:#1f4e79;color:#fff;font-size:10pt;padding:5px 8px;border:1px solid #1f4e79;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.sh-tbl td{height:32px}
+.sh-lab{color:#1f4e79;font-weight:700;font-size:12pt;margin:18px 0 6px}
+.sh-box{border:1px solid #777;padding:8px 10px;font-size:11pt;white-space:pre-wrap;overflow-wrap:anywhere}
+.sh-prob{min-height:1.4in}
+.sh-note{min-height:2.6in}
 .c-page .i-prob{font-size:40pt;margin:6px 0 0}
 .c-page .i-probtxt{margin:4px 0 8px}
 .c-page .i-prob.dense{font-size:30pt;padding:3px 10px;margin-top:4px}

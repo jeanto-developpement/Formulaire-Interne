@@ -3195,15 +3195,15 @@ function identHtml(p) {
   <section class="sec" aria-label="${L("Feuille d'identification job", "Job identification sheet")}">
     <h2 class="bar">${L("FEUILLE D'IDENTIFICATION JOB", "JOB IDENTIFICATION SHEET")}</h2>
     <div class="grid2">
-      ${fld(p, "quote", "#Quote")}${fld(p, "customer", L("Client", "Customer"), { auto: "organization" })}
+      ${fld(p, "quote", "#Quote *")}${fld(p, "customer", L("Client", "Customer"), { auto: "organization" })}
       ${fld(p, "project", L("Projet", "Project"))}${fld(p, "job", L("# Job", "# Job"))}
     </div>
     <div class="allbox probbox"><label class="chk"><input type="checkbox" data-k="problem"><span>⚠ ${L("Indiquer un problème", "Flag a problem")}</span></label></div>
     <div class="grid2 probtxt">${fld(p, "problemTxt", L("Description du problème (facultatif, imprimée si la case est cochée)", "Problem description (optional, printed when the box is ticked)"), { max: 120 })}</div>
     <div class="qrprev" data-qr></div>
     <p class="mintro" style="padding:10px 14px;margin:0;border-top:1px solid var(--line)">${L(
-      "La feuille s'imprime en grand format. Un champ laissé vide s'imprime en gris clair (à remplir à la main). La date et l'heure d'impression s'ajoutent automatiquement au bas de la feuille.",
-      "The sheet prints in large type. An empty field prints in light grey (to fill in by hand). The print date and time are added automatically at the bottom of the sheet.")}</p>
+      "La feuille s'imprime en grand format. Un champ laissé vide n'est pas imprimé. La date et l'heure d'impression s'ajoutent automatiquement au bas de la feuille.",
+      "The sheet prints in large type. An empty field is not printed. The print date and time are added automatically at the bottom of the sheet.")}</p>
   </section>`;
 }
 
@@ -3213,6 +3213,7 @@ function identPrint(s) {
   // la taille du texte s'adapte à la longueur pour que tout tienne en largeur
   const line = (val, placeholder) => {
     const t = String(val || "").trim(), txt = t || placeholder;
+    if (!t) return "";                                                     // champ vide : rien n'est imprimé
     // taille calculée d'après la largeur réelle du texte (Times New Roman), pour que tout tienne sur une ligne
     const cx = identPrint.cx || (identPrint.cx = document.createElement("canvas").getContext("2d"));
     cx.font = '100px "Times New Roman", Times, serif';
@@ -3672,7 +3673,7 @@ function ctrlHtmlG(cfg, p) {
   <section class="sec" aria-label="${L(cfg.titleFr, cfg.titleEn)}">
     <h2 class="bar">${L(cfg.titleFr.toUpperCase(), cfg.titleEn.toUpperCase())}</h2>
     <div class="grid2">
-      ${fld(p, "job", L("# Job", "# Job"))}${fld(p, "customer", L("Client", "Customer"), { auto: "organization" })}
+      ${fld(p, "job", L("# Job *", "# Job *"))}${fld(p, "customer", L("Client *", "Customer *"), { auto: "organization" })}
       ${fld(p, "block", L("Projet", "Project"))}
       ${fld(p, "unit", L("Unité n°", "Unit no."), { mode: "numeric" })}${fld(p, "units", L("Sur (nombre d'unités)", "Of (number of units)"), { mode: "numeric" })}
     </div>
@@ -3746,9 +3747,9 @@ function ctrlPrintG(cfg, s) {
     <div class="c-head"><img class="i-logo" src="logo.svg" alt="">${qr ? `<div class="c-qr">${qr}<small>${v(url.replace("https://", ""))}</small></div>` : ""}</div>
     ${prob ? `<div class="i-prob${nE > 16 ? " dense" : ""}">⚠ ${L("PROBLÈME", "PROBLEM")}</div>` : ""}
     <div class="c-lines">
-      <div class="c-client${ph(s.job)}" style="font-size:${bigSz}pt">${v(jobT.toUpperCase())}</div>
-      <div class="c-l2${ph(s.customer)}" style="font-size:${midSz}pt">${v(client.toUpperCase())}</div>
-      <div class="c-l2${ph(s.block)}" style="font-size:${midSz}pt">${v(proj.toUpperCase())}</div>
+      ${String(s.job || "").trim() ? `<div class="c-client" style="font-size:${bigSz}pt">${v(jobT.toUpperCase())}</div>` : ""}
+      ${String(s.customer || "").trim() ? `<div class="c-l2" style="font-size:${midSz}pt">${v(client.toUpperCase())}</div>` : ""}
+      ${String(s.block || "").trim() ? `<div class="c-l2" style="font-size:${midSz}pt">${v(proj.toUpperCase())}</div>` : ""}
       ${N > 1 || u || n ? `<div class="c-l3" style="font-size:${midSz}pt">${v(l3.toUpperCase())}</div>` : ""}
       ${items.length ? `<div class="c-list" style="font-size:${itemPt}pt;row-gap:${rowGap}px">${items.map(([k, fr, en]) => `<span class="c-lab">${v(L(fr, en))}</span><span class="c-box"></span><span class="c-init"><small>${L("Init.", "Init.")}</small><i></i></span>`).join("")}</div>` : ""}
     </div>
@@ -3756,6 +3757,13 @@ function ctrlPrintG(cfg, s) {
     <div class="i-foot"><span>${L("Date et heure d'impression :", "Printed on:")}</span> <b>${stamp}</b> <span class="i-ver">· ${v(verLabel(cfg.type))}${s.id ? ` · ${L("Réf.", "Ref.")} ${v(s.id)}` : ""}</span></div>
   </div>`;
   return N > 1 ? Array.from({ length: N }, (_, i) => sheet(`${i + 1}/${N}`, true)).join("") : sheet(l3One, false);
+}
+// feuilles des contrôles : # job et client obligatoires (Enregistrer, Courriel et Imprimer sont bloqués sinon)
+function ctrlValidate(s) {
+  const errs = [];
+  if (!String(s.job || "").trim()) errs.push({ selector: '[data-k="job"]', message: L("Le # job est obligatoire.", "The # job is required.") });
+  if (!String(s.customer || "").trim()) errs.push({ selector: '[data-k="customer"]', message: L("Le client est obligatoire.", "The customer is required.") });
+  return errs;
 }
 const ctrlHtml = p => ctrlHtmlG(CTRL_SYS, p), ctrlPrint = s => ctrlPrintG(CTRL_SYS, s);
 const ctrlpHtml = p => ctrlHtmlG(CTRL_PUMP, p), ctrlpPrint = s => ctrlPrintG(CTRL_PUMP, s);
@@ -3810,6 +3818,55 @@ function soldPrint(s) {
   </div>`;
 }
 
+/* =====================================================================
+   11. TRANSFERT DE SHIFT (formulaire interne) — repris du document Word « Transfert de Shift »
+   Nom employé, date, tableau « Assigner » (Quote / Étape, 5 lignes), Problème, Note pour le prochain shift.
+   ===================================================================== */
+const SHIFT_ROWS = 5;
+function shiftHtml(p) {
+  return `
+  <section class="sec" aria-label="${L("Transfert de shift", "Shift handover")}">
+    <h2 class="bar">${L("TRANSFERT DE SHIFT", "SHIFT HANDOVER")}</h2>
+    <div class="grid2">
+      ${fld(p, "tech", L("Nom employé", "Employee name"), { auto: "name", pref: "tech" })}${fld(p, "date", "Date", { type: "date" })}
+    </div>
+  </section>
+  <section class="sec" aria-label="${L("Assigner", "Assign")}">
+    <h2 class="bar">${L("ASSIGNER", "ASSIGN")}</h2>
+    <div class="sh-rows">
+      <div class="sh-rh"><span>Quote</span><span>${L("Étape", "Step")}</span></div>
+      ${Array.from({ length: SHIFT_ROWS }, (_, i) => `<div class="sh-row">
+        <input type="text" data-k="q${i + 1}" aria-label="Quote ${i + 1}" placeholder="Quote ${i + 1}">
+        <input type="text" data-k="e${i + 1}" aria-label="${L("Étape", "Step")} ${i + 1}" placeholder="${L("Étape", "Step")} ${i + 1}">
+      </div>`).join("")}
+    </div>
+  </section>
+  <section class="sec" aria-label="${L("Problème", "Problem")}">
+    <h2 class="bar">${L("PROBLÈME", "PROBLEM")}</h2>
+    <div class="sh-area">${area(p, "shProb", L("Problème", "Problem"), 3)}</div>
+  </section>
+  <section class="sec" aria-label="${L("Note pour le prochain shift", "Note for the next shift")}">
+    <h2 class="bar">${L("NOTE OU COMMENTAIRE POUR LE PROCHAIN SHIFT", "NOTE OR COMMENT FOR THE NEXT SHIFT")}</h2>
+    <div class="sh-area">${area(p, "shNote", L("Note ou commentaire", "Note or comment"), 5)}</div>
+  </section>`;
+}
+function shiftPrint(s) {
+  const t = x => String(x || "").trim();
+  const rows = Array.from({ length: SHIFT_ROWS }, (_, i) => `<tr><td>${v(t(s["q" + (i + 1)]))}</td><td>${v(t(s["e" + (i + 1)]))}</td></tr>`).join("");
+  return `<div class="sh-page">
+    <div class="sh-head"><img class="sh-logo" src="logo.svg" alt=""><div class="sh-title">${L("TRANSFERT DE SHIFT", "SHIFT HANDOVER")}</div></div>
+    <table class="sh-info"><colgroup><col style="width:17%"><col style="width:42%"><col style="width:10%"><col style="width:31%"></colgroup>
+      <tr><th>${L("Nom employé", "Employee name")}</th><td>${v(t(s.tech))}</td><th>Date</th><td>${v(t(s.date))}</td></tr></table>
+    <div class="sh-lab">${L("Assigner :", "Assign:")}</div>
+    <table class="sh-tbl"><colgroup><col style="width:33%"><col style="width:67%"></colgroup>
+      <thead><tr><th>Quote</th><th>${L("Étape", "Step")}</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="sh-lab">${L("Problème", "Problem")}</div>
+    <div class="sh-box sh-prob">${v(t(s.shProb))}</div>
+    <div class="sh-lab">${L("Note ou commentaire pour le prochain shift", "Note or comment for the next shift")}</div>
+    <div class="sh-box sh-note">${v(t(s.shNote))}</div>
+  </div>` + foot(s);
+}
+
 /* ---------- versions des formulaires ----------
    À AUGMENTER à chaque modification d'un formulaire (champs, libellés, mise en page) : le numéro s'imprime sur chaque PDF.
    Format : [version, date de révision]. */
@@ -3820,11 +3877,12 @@ const VERSIONS = {
   est:     ["1.0", "2026-10-03"],
   req:     ["1.0", "2026-10-03"],
   vfd:     ["1.0", "2026-10-03"],
-  ident:   ["1.4", "2026-10-31"],
+  ident:   ["1.6", "2026-10-31"],
   pump:    ["3.5", "2026-08-15"],
-  ctrl:    ["3.2", "2026-10-31"],
-  ctrlp:   ["1.6", "2026-10-31"],
-  sold:    ["1.7", "2026-10-31"]
+  ctrl:    ["3.4", "2026-10-31"],
+  ctrlp:   ["1.8", "2026-10-31"],
+  sold:    ["1.7", "2026-10-31"],
+  shift:   ["1.0", "2026-11-12"]
 };
 
 /* ---------- registre ---------- */
@@ -3868,6 +3926,7 @@ const FORMS = {
     get short() { return L("Identification job", "Job ID sheet"); },
     get desc() { return L("Grande feuille #Quote, client, projet, # Job avec date et heure d'impression.", "Large sheet: #Quote, customer, project, # Job, with print date and time."); },
     html: identHtml, refresh: identRefresh, print: identPrint,
+    validate: s => String(s.quote || "").trim() ? [] : [{ selector: '[data-k="quote"]', message: L("Le #Quote est obligatoire.", "The #Quote is required.") }],   // #Quote obligatoire
     blank: () => ({}),
     label: s => [s.problem ? "⚠ " + L("Problème", "Problem") : "", s.customer || s.project, s.job && "Job " + s.job].filter(Boolean).join(" — ")
   },
@@ -3885,7 +3944,7 @@ const FORMS = {
     get title() { return L("Feuille des contrôles - Système", "Control sheet - System"); },
     get short() { return L("Feuille des contrôles - Système", "Control sheet - System"); },
     get desc() { return L("Grande feuille : # job, client, projet, unité, et lignes de contrôle avec initiales.", "Large sheet: # job, customer, project, unit, and checklist lines with initials."); },
-    html: ctrlHtml, refresh: ctrlRefresh, print: ctrlPrint,
+    html: ctrlHtml, refresh: ctrlRefresh, print: ctrlPrint, validate: ctrlValidate,
     blank: () => ctrlBlank(CTRL_SYS),
     label: s => [s.problem ? "⚠ " + L("Problème", "Problem") : "", s.customer, s.job && "Job " + s.job, s.block].filter(Boolean).join(" — ")
   },
@@ -3894,7 +3953,7 @@ const FORMS = {
     get title() { return L("Feuille des contrôles - Pompe", "Control sheet - Pump"); },
     get short() { return L("Feuille des contrôles - Pompe", "Control sheet - Pump"); },
     get desc() { return L("Grande feuille : # job, client, projet, unité, code QR et contrôle de la pompe (assemblage, alignement, tester, drive…).", "Large sheet: # job, customer, project, unit, QR code and pump check (assembly, alignment, testing, drive…)."); },
-    html: ctrlpHtml, refresh: ctrlRefresh, print: ctrlpPrint,
+    html: ctrlpHtml, refresh: ctrlRefresh, print: ctrlpPrint, validate: ctrlValidate,
     blank: () => ctrlBlank(CTRL_PUMP),
     label: s => [s.problem ? "⚠ " + L("Problème", "Problem") : "", s.customer, s.job && "Job " + s.job, s.block].filter(Boolean).join(" — ")
   },
@@ -3907,6 +3966,16 @@ const FORMS = {
     fileWho: s => [s.customer, s.project].filter(Boolean).join(" "),                 // nom de fichier : SVL-PECOS
     blank: () => ({}),
     label: s => [s.problem ? "⚠ " + L("Problème", "Problem") : "", [s.customer, s.project].filter(Boolean).join(" - "), s.quote && "Quote " + s.quote, s.desc].filter(Boolean).join(" — ")
+  },
+  shift: {
+    group: "internal", folder: "Transferts de shift", fileTag: "Transfert-Shift",
+    get title() { return L("Transfert de shift", "Shift handover"); },
+    get short() { return L("Transfert de shift", "Shift handover"); },
+    get desc() { return L("Nom employé, date, quotes et étapes assignés, problème et note pour le prochain shift.", "Employee name, date, assigned quotes and steps, problem and note for the next shift."); },
+    html: shiftHtml, print: shiftPrint,
+    fileWho: s => s.tech,
+    blank: () => ({}),
+    label: s => [s.tech, [1, 2, 3, 4, 5].map(i => String(s["q" + i] || "").trim()).filter(Boolean).slice(0, 3).join(", ")].filter(Boolean).join(" — ")
   },
   req: {
     group: "internal", folder: "Réquisitions d'achat", fileTag: "Requisition",
