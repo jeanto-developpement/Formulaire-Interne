@@ -3632,8 +3632,8 @@ function pumpPrint(s) {
    Grande feuille posée sur l'équipement : client, # job + bloc, puissance et unité (n/n),
    puis la liste de contrôle Alignement / Électrique / Programmation (cases à cocher à la main ou dans l'app).
    ===================================================================== */
-const CTRL_ITEMS = [["assy", "Assemblage", "Assembly"], ["align", "Alignement", "Alignment"], ["elec", "Électrique", "Electrical"], ["prog", "Programmation", "Programming"],
-  ["isol", "Isolation", "Insulation"], ["test", "Tester", "Testing"], ["fini", "Finition", "Finishing"], ["rust", "Inhibiteur de rouille", "Rust inhibitor"],
+const CTRL_ITEMS = [["assy", "Assemblage", "Assembly"], ["align", "Alignement", "Alignment"], ["test", "Tester", "Testing"], ["isol", "Isolation", "Insulation"],
+  ["elec", "Électrique", "Electrical"], ["prog", "Programmation", "Programming"], ["fini", "Finition", "Finishing"], ["rust", "Inhibiteur de rouille", "Rust inhibitor"],
   ["loose", "Pièces shippées lousses", "Loose-shipped parts"], ["qc", "Contrôle qualité", "Quality control"]];
 const CTRL_DEFAULT = [];                                          // aucune présélection (sauf le contrôle qualité, obligatoire)
 const CTRL_LEGACY = ["align", "elec", "prog"];                   // anciens rapports sans sélection enregistrée : leurs 3 lignes d'origine
@@ -3879,7 +3879,7 @@ const VERSIONS = {
   vfd:     ["1.0", "2026-10-03"],
   ident:   ["1.6", "2026-10-31"],
   pump:    ["3.5", "2026-08-15"],
-  ctrl:    ["3.4", "2026-10-31"],
+  ctrl:    ["3.5", "2026-11-13"],
   ctrlp:   ["1.8", "2026-10-31"],
   sold:    ["1.7", "2026-10-31"],
   shift:   ["1.0", "2026-11-12"]
