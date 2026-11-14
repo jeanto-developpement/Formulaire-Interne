@@ -66,7 +66,8 @@ Tous les PDF sont au **format Lettre (8,5 × 11 po)** — portrait, sauf la réq
 > ⚠️ GitHub Pages est **public** sur les comptes gratuits (la page vide, pas les rapports). Les rapports ne quittent jamais l'appareil.
 
 ## Fichiers
-- `config.js` — **configuration Google (à modifier sur GitHub)** : URL du script, jeton, Cc, copie auto
+- `config.js` — **configuration Google (à modifier sur GitHub)** : URL du script, jeton, Cc, copie auto. **Il n'est pas dans le zip** : votre fichier configuré sur GitHub n'est donc jamais écrasé lors d'une mise à jour.
+- `config.exemple.js` — modèle vide de `config.js`, pour une **première installation** seulement : téléversez-le et renommez-le `config.js`, puis remplissez `scriptUrl` et `token`
 - `cloud.js` — génération du PDF dans le navigateur, réglages Google, fenêtre courriel, appels au script
 - `vendor/` — bibliothèques html2canvas et jsPDF (licence MIT), chargées seulement à l'envoi
 - `google-apps-script/Code.gs` — le script à coller dans Google Apps Script

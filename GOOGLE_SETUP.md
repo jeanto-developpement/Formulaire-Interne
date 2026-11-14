@@ -47,6 +47,8 @@ Réglages du script (⚙ **Paramètres du projet → Propriétés du script**) :
 > Si vous modifiez `Code.gs` plus tard : **Déployer → Gérer les déploiements → ✏️ → Nouvelle version**. L'URL ne change pas.
 
 ## 4. Renseigner `config.js` sur GitHub
+*Première installation : le zip ne contient pas `config.js` mais son modèle **`config.exemple.js`**. Téléversez-le, puis renommez-le `config.js` sur GitHub (crayon ✏️ → changer le nom du fichier). Les zips de mise à jour ne contiennent jamais `config.js` : votre fichier configuré n'est pas écrasé.*
+
 1. Dans votre dépôt GitHub, ouvrez **`config.js`** → icône crayon ✏️.
 2. Collez l'URL et le jeton entre les guillemets :
    ```js
