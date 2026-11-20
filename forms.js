@@ -3665,6 +3665,22 @@ const ctrlSelG = (cfg, s) => { const any = cfg.items.some(([k]) => ("opt_" + k) 
 const ctrlBlank = cfg => Object.fromEntries(cfg.items.map(([k]) => ["opt_" + k, false]));
 // nombre de feuilles à imprimer : 1, ou « Sur » (2 à 99) si « Imprimer toutes les feuilles » est coché (ex. 1 sur 5 → 1/5, 2/5, … 5/5)
 const ctrlCount = s => { const n = parseInt(String(s.units || "").replace(/\D/g, ""), 10); return s.allSheets && n >= 2 && n <= 99 ? n : 1; };
+// plusieurs # job : même numéro, seul ce qui suit le tiret change (ex. 176645-1, 176645-2, 176645-3) — « 1-3 », « 1 à 3 » ou « 1, 2, 5 »
+const ctrlSuffixes = spec => {
+  const out = [], txt = String(spec || "").replace(/(\d)\s*(?:à|to)\s*(\d)/gi, "$1-$2");
+  for (const tok of txt.split(/[,;\s]+/).filter(Boolean)) {
+    const m = tok.match(/^(\d+)-(\d+)$/);
+    if (m) { let a = +m[1], b = +m[2]; if (b < a) [a, b] = [b, a]; if (b - a > 99) return null; for (let k = a; k <= b; k++) out.push(String(k)); }
+    else if (/^[A-Za-z0-9.]+$/.test(tok)) out.push(tok); else return null;
+  }
+  return [...new Set(out)];
+};
+const ctrlJobs = s => {
+  const job = String(s.job || "").trim(); if (!s.multiJob || !job) return [job];
+  const suf = ctrlSuffixes(s.jobSuffixes); if (!suf || !suf.length) return [job];
+  const d = job.lastIndexOf("-"), base = d > 0 ? job.slice(0, d) : job;
+  return suf.slice(0, 50).map(x => `${base}-${x}`);
+};
 // option « problème » à l'écran (feuilles des contrôles, soudure) — même présentation que la feuille d'identification job
 const probUi = p => `<div class="allbox probbox"><label class="chk"><input type="checkbox" data-k="problem"><span>⚠ ${L("Indiquer un problème", "Flag a problem")}</span></label></div>
     <div class="grid2 probtxt">${fld(p, "problemTxt", L("Description du problème (facultatif, imprimée si la case est cochée)", "Problem description (optional, printed when the box is ticked)"), { max: 120 })}</div>`;
@@ -3679,6 +3695,9 @@ function ctrlHtmlG(cfg, p) {
     </div>
     <div class="allbox"><label class="chk"><input type="checkbox" data-k="allSheets"><span>${L("Imprimer toutes les feuilles (de 1 à « Sur »)", "Print all the sheets (from 1 to “Of”)")}</span></label></div>
     <p class="mintro" style="padding:4px 14px 12px;margin:0" data-allhint></p>
+    <div class="allbox"><label class="chk"><input type="checkbox" data-k="multiJob"><span>${L("Imprimer plusieurs # job (seul le numéro après le tiret change)", "Print several job numbers (only the number after the dash changes)")}</span></label></div>
+    <div class="grid2 probtxt">${fld(p, "jobSuffixes", L("Numéros après le tiret (ex. 1-3 ou 1, 2, 5)", "Numbers after the dash (e.g. 1-3 or 1, 2, 5)"), { max: 60 })}</div>
+    <p class="mintro" style="padding:4px 14px 12px;margin:0" data-jobhint></p>
     ${probUi(p)}
     <div class="qrprev" data-qr></div>
   </section>
@@ -3709,6 +3728,14 @@ function qrRefresh(urlFn, fieldFr, fieldEn) {
 const ctrlQrRefresh = qrRefresh(ctrlUrl, "# job", "# job");
 const ctrlRefresh = (host, s) => {
   ctrlQrRefresh(host, s);
+  const jh = host.querySelector("[data-jobhint]");
+  if (jh) {
+    const suf = ctrlSuffixes(s.jobSuffixes), jobs = ctrlJobs(s), n1 = ctrlCount(s), list = jobs.slice(0, 6).join(", ") + (jobs.length > 6 ? ", …" : "");
+    jh.textContent = !s.multiJob ? ""
+      : !String(s.job || "").trim() ? L("Entrez d'abord le # job (ex. 176645-1).", "Enter the # job first (e.g. 176645-1).")
+      : !suf || !suf.length ? L("Entrez les numéros après le tiret, par exemple 1-3 ou 1, 2, 5.", "Enter the numbers after the dash, e.g. 1-3 or 1, 2, 5.")
+      : L(`Imprimera ${jobs.length} # job : ${list}${n1 > 1 ? ` (× ${n1} feuilles chacun = ${Math.min(200, jobs.length * n1)} pages)` : ""}.`, `Will print ${jobs.length} job numbers: ${list}${n1 > 1 ? ` (× ${n1} sheets each = ${Math.min(200, jobs.length * n1)} pages)` : ""}.`);
+  }
   const h = host.querySelector("[data-allhint]"); if (!h) return;
   const N = parseInt(String(s.units || "").replace(/\D/g, ""), 10), ok = N >= 2 && N <= 99, u = String(s.unit || "").trim() || "_";
   h.textContent = s.allSheets
@@ -3726,6 +3753,7 @@ function ctrlPrintG(cfg, s) {
   const jobT = String(s.job || "").trim() || "# JOB", proj = String(s.block || "").trim() || L("PROJET", "PROJECT");
   const u = String(s.unit || "").trim(), n = String(s.units || "").trim();
   const N = ctrlCount(s);                                                    // 1 feuille, ou une par unité (1/5 … 5/5)
+  const jobs = ctrlJobs(s).slice(0, Math.max(1, Math.floor(200 / N))), total = jobs.length * N;   // plusieurs # job : une feuille (ou une série d'unités) par # job, 200 pages au plus
   const l3One = u || n ? `${u || "_"}/${n || "_"}` : "_/_";
   const ph = (val, txt) => val ? "" : " ph";
   const sel = ctrlSelG(cfg, s), req = sel.filter(([k]) => cfg.required.includes(k));
@@ -3739,15 +3767,15 @@ function ctrlPrintG(cfg, s) {
   let itemPt = nE <= 3 ? 34 : nE <= 5 ? 30 : nE <= 8 ? 26 : nE <= 10 ? 24 : nE <= 11 ? 22 : nE <= 12 ? 21 : nE <= 14 ? 19 : nE <= 16 ? 17 : 15;
   const rowGap = nE <= 3 ? 34 : nE <= 5 ? 24 : nE <= 8 ? 14 : nE <= 10 ? 9 : nE <= 11 ? 7 : nE <= 12 ? 6 : nE <= 14 ? 4 : nE <= 16 ? 2 : 1, big = nE <= 3 ? 80 : nE <= 5 ? 72 : nE <= 11 ? 64 : nE <= 14 ? 56 : nE <= 16 ? 48 : 42;
   if (items.length) itemPt = Math.min(itemPt, ...items.map(([k, fr, en]) => fit(L(fr, en), itemPt, 330)));   // une ligne longue rapetisse la liste pour tenir dans la largeur
-  const bigSz = fit(jobT, big, 520);                                         // # job : en grand
+  const bigSz = Math.min(...jobs.map(j => fit(j || jobT, big, 520)));                                         // # job : en grand
   const midMax = nE <= 5 ? 44 : nE <= 11 ? 40 : nE <= 14 ? 34 : nE <= 16 ? 30 : 26;                          // client, projet, unité / sur : même grosseur
   const midSz = Math.min(fit(client, midMax, 520), fit(proj, midMax, 520), fit(N > 1 ? `${N}/${N}` : l3One, midMax, 520));
   const url = ctrlUrl(s), qr = qrSvg(url);
-  const sheet = (l3, many) => `<div class="c-page${many ? " avoid" : ""}">
+  const sheet = (l3, many, jt) => `<div class="c-page${many ? " avoid" : ""}">
     <div class="c-head"><img class="i-logo" src="logo.svg" alt="">${qr ? `<div class="c-qr">${qr}<small>${v(url.replace("https://", ""))}</small></div>` : ""}</div>
     ${prob ? `<div class="i-prob${nE > 16 ? " dense" : ""}">⚠ ${L("PROBLÈME", "PROBLEM")}</div>` : ""}
     <div class="c-lines">
-      ${String(s.job || "").trim() ? `<div class="c-client" style="font-size:${bigSz}pt">${v(jobT.toUpperCase())}</div>` : ""}
+      ${String(s.job || "").trim() ? `<div class="c-client" style="font-size:${bigSz}pt">${v((jt || jobT).toUpperCase())}</div>` : ""}
       ${String(s.customer || "").trim() ? `<div class="c-l2" style="font-size:${midSz}pt">${v(client.toUpperCase())}</div>` : ""}
       ${String(s.block || "").trim() ? `<div class="c-l2" style="font-size:${midSz}pt">${v(proj.toUpperCase())}</div>` : ""}
       ${N > 1 || u || n ? `<div class="c-l3" style="font-size:${midSz}pt">${v(l3.toUpperCase())}</div>` : ""}
@@ -3756,13 +3784,14 @@ function ctrlPrintG(cfg, s) {
     ${prob && pTxt ? `<div class="i-probtxt" style="font-size:${pSize}pt">${v(pTxt)}</div>` : ""}
     <div class="i-foot"><span>${L("Date et heure d'impression :", "Printed on:")}</span> <b>${stamp}</b> <span class="i-ver">· ${v(verLabel(cfg.type))}${s.id ? ` · ${L("Réf.", "Ref.")} ${v(s.id)}` : ""}</span></div>
   </div>`;
-  return N > 1 ? Array.from({ length: N }, (_, i) => sheet(`${i + 1}/${N}`, true)).join("") : sheet(l3One, false);
+  return total > 1 ? jobs.map(j => N > 1 ? Array.from({ length: N }, (_, i) => sheet(`${i + 1}/${N}`, true, j)).join("") : sheet(l3One, true, j)).join("") : sheet(l3One, false, jobs[0]);
 }
 // feuilles des contrôles : # job et client obligatoires (Enregistrer, Courriel et Imprimer sont bloqués sinon)
 function ctrlValidate(s) {
   const errs = [];
   if (!String(s.job || "").trim()) errs.push({ selector: '[data-k="job"]', message: L("Le # job est obligatoire.", "The # job is required.") });
   if (!String(s.customer || "").trim()) errs.push({ selector: '[data-k="customer"]', message: L("Le client est obligatoire.", "The customer is required.") });
+  if (s.multiJob && String(s.job || "").trim()) { const suf = ctrlSuffixes(s.jobSuffixes); if (!suf || !suf.length) errs.push({ selector: '[data-k="jobSuffixes"]', message: L("Numéros après le tiret manquants ou invalides (ex. 1-3 ou 1, 2, 5).", "Numbers after the dash missing or invalid (e.g. 1-3 or 1, 2, 5).") }); }
   return errs;
 }
 const ctrlHtml = p => ctrlHtmlG(CTRL_SYS, p), ctrlPrint = s => ctrlPrintG(CTRL_SYS, s);
@@ -3879,8 +3908,8 @@ const VERSIONS = {
   vfd:     ["1.0", "2026-10-03"],
   ident:   ["1.6", "2026-10-31"],
   pump:    ["3.5", "2026-08-15"],
-  ctrl:    ["3.6", "2026-11-13"],
-  ctrlp:   ["1.8", "2026-10-31"],
+  ctrl:    ["3.7", "2026-11-15"],
+  ctrlp:   ["1.9", "2026-11-15"],
   sold:    ["1.7", "2026-10-31"],
   shift:   ["1.0", "2026-11-12"]
 };
